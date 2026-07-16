@@ -18,9 +18,8 @@ dist-ssr
 *.local
 package-lock.json
 
-# Wrangler / Cloudflare
-.wrangler/
-.dev.vars
+# Vercel
+.vercel/
 
 # Editor directories and files
 .vscode/*
