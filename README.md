@@ -24,7 +24,7 @@ A cinematic, responsive developer portfolio styled around an Ice and Fire visual
 ## Live Demo
  
 🌐 **Live Site:** _add your deployed Vercel URL here_
-📦 **Repository:** [github.com/lakshychauhan/Portfolio-GOT](https://github.com/lakshychauhan/Portfolio-GOT)
+📦 **Repository:** [github.com/lakshychauhan/LakshyChauhan_Portfolio](https://github.com/lakshychauhan/LakshyChauhan_Portfolio.git)
  
 ---
  
@@ -88,8 +88,8 @@ Make sure [Node.js](https://nodejs.org/) is installed on your machine.
 ### 1. Clone the Repository
  
 ```bash
-git clone https://github.com/lakshychauhan/Portfolio-GOT.git
-cd Portfolio-GOT
+git clone https://github.com/lakshychauhan/LakshyChauhan_Portfolio.git
+cd LakshyChauhan_Portfolio
 ```
  
 ### 2. Install Dependencies
