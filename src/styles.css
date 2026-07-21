@@ -87,14 +87,15 @@
   }
 
   body {
-    background-color: var(--color-background);
+    background-color: var(--background-dynamic, var(--color-background));
     color: var(--color-foreground);
     font-family: var(--font-body);
     font-size: 1.075rem;
     line-height: 1.65;
     background-image:
-      radial-gradient(ellipse at 15% 8%, oklch(0.35 0.09 40 / 0.28), transparent 55%),
-      radial-gradient(ellipse at 85% 92%, oklch(0.28 0.07 230 / 0.28), transparent 60%);
+      radial-gradient(ellipse at 15% 15%, var(--bg-glow-1, oklch(0.35 0.09 40 / 0.28)), transparent 60%),
+      radial-gradient(ellipse at 85% 85%, var(--bg-glow-2, oklch(0.28 0.07 230 / 0.28)), transparent 65%);
+    will-change: background-color, background-image;
   }
 
   h1, h2, h3, h4 {
@@ -172,6 +173,32 @@
   box-shadow: 0 0 8px var(--ice);
 }
 
+/* ==== GLOBAL SCROLL-LINKED MOTES ==== */
+.motes-global {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.motes-ember-layer,
+.motes-frost-layer {
+  position: absolute;
+  inset: 0;
+  transition: opacity 0.4s ease-out, filter 0.4s ease-out;
+}
+
+.motes-ember-layer {
+  opacity: var(--ember-intensity, 1);
+  filter: brightness(var(--mote-brightness, 1));
+}
+
+.motes-frost-layer {
+  opacity: var(--frost-intensity, 0.1);
+  filter: brightness(var(--mote-brightness, 1));
+}
+
 .typing-cursor {
   display: inline-block;
   width: 3px;
@@ -227,4 +254,513 @@
   100% { transform: scaleX(1); }
 }
 @utility animate-co-line { animation: co-line 1s cubic-bezier(0.77,0,0.175,1) 1.2s both; }
+
+/* ==== IRON GATE REVEAL ==== */
+.iron-gate-section {
+  position: relative;
+  overflow: hidden;
+}
+
+.iron-gate {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50.5%;
+  z-index: 30;
+  pointer-events: none;
+  will-change: transform;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0px, transparent 79px,
+      oklch(0.22 0.015 60 / 0.2) 79px,
+      oklch(0.22 0.015 60 / 0.2) 80px
+    ),
+    linear-gradient(180deg,
+      oklch(0.11 0.01 60) 0%,
+      oklch(0.15 0.013 55) 50%,
+      oklch(0.11 0.01 60) 100%
+    );
+  transition: transform 1.6s cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* Bronze seam line along the meeting edge */
+.iron-gate::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(
+    180deg,
+    transparent 3%,
+    oklch(0.5 0.1 65 / 0.4) 15%,
+    oklch(0.62 0.12 65 / 0.7) 50%,
+    oklch(0.5 0.1 65 / 0.4) 85%,
+    transparent 97%
+  );
+}
+
+/* Repeating rivet studs along the seam */
+.iron-gate::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 7px;
+  background-image: radial-gradient(
+    circle,
+    oklch(0.42 0.07 65 / 0.85) 2.5px,
+    oklch(0.3 0.04 65 / 0.2) 3px,
+    transparent 4px
+  );
+  background-size: 7px 70px;
+  background-repeat: repeat-y;
+  background-position: center 25px;
+}
+
+.iron-gate-left {
+  left: 0;
+}
+
+.iron-gate-left::before,
+.iron-gate-left::after {
+  right: 0;
+}
+
+.iron-gate-right {
+  right: 0;
+}
+
+.iron-gate-right::before,
+.iron-gate-right::after {
+  left: 0;
+}
+
+.iron-gate-left.gate-open {
+  transform: translateX(-100%);
+}
+
+.iron-gate-right.gate-open {
+  transform: translateX(100%);
+}
+
+/* Golden light flash when gates split open */
+.gate-light {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 4px;
+  transform: translateX(-50%);
+  z-index: 31;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 5%,
+    oklch(0.82 0.18 55 / 0.7) 25%,
+    oklch(0.72 0.2 40 / 0.9) 50%,
+    oklch(0.82 0.18 55 / 0.7) 75%,
+    transparent 95%
+  );
+}
+
+.gate-light-active {
+  animation: gate-light-flash 2s ease-out forwards;
+}
+
+@keyframes gate-light-flash {
+  0% { opacity: 0; width: 4px; filter: blur(0px); }
+  12% { opacity: 1; width: 6px; filter: blur(2px); }
+  35% { opacity: 0.8; width: 50px; filter: blur(16px); }
+  65% { opacity: 0.3; width: 100px; filter: blur(35px); }
+  100% { opacity: 0; width: 160px; filter: blur(50px); }
+}
+
+/* ==== UNFURLING TIMELINE ==== */
+.unfurling-timeline {
+  --timeline-progress: 0;
+}
+
+.timeline-item .timeline-content {
+  opacity: 0;
+  transform: translateX(16px);
+  transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.timeline-item.revealed .timeline-content {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.timeline-diamond {
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.6s, box-shadow 0.6s;
+  will-change: transform, box-shadow;
+}
+
+.timeline-diamond.ignited {
+  transform: scale(1.15) rotate(45deg);
+  border-color: var(--fire);
+  box-shadow: 0 0 10px var(--fire);
+}
+
+.timeline-glow {
+  box-shadow: 0 0 14px var(--fire);
+  will-change: transform, opacity;
+}
+
+/* ==== WESTEROS SKILLS MAP ==== */
+.skills-map-container {
+  position: relative;
+  width: 100%;
+  height: 600px;
+  background-color: var(--color-obsidian);
+  background-image: 
+    radial-gradient(circle at 50% 50%, oklch(0.18 0.015 55) 0%, transparent 80%),
+    repeating-radial-gradient(circle, var(--color-background) 0px, var(--color-background) 4px, transparent 4px, transparent 20px);
+  background-size: 100% 100%, 40px 40px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+@keyframes map-line-draw {
+  from { stroke-dashoffset: 800; }
+  to { stroke-dashoffset: 0; }
+}
+
+.map-line {
+  stroke-dasharray: 800;
+  stroke-dashoffset: 800;
+  animation: map-line-draw 2.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.map-region-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s;
+}
+
+.map-region-node:hover {
+  transform: translate(-50%, -53%) scale(1.03);
+  z-index: 20;
+}
+
+@keyframes pin-drop {
+  0% { transform: translateY(-16px); opacity: 0; }
+  60% { transform: translateY(3px); opacity: 0.8; }
+  80% { transform: translateY(-1px); opacity: 0.9; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.skill-pin {
+  animation: pin-drop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  opacity: 0;
+}
+
+.skill-pin-1 { animation-delay: 0.1s; }
+.skill-pin-2 { animation-delay: 0.2s; }
+.skill-pin-3 { animation-delay: 0.3s; }
+.skill-pin-4 { animation-delay: 0.4s; }
+.skill-pin-5 { animation-delay: 0.5s; }
+.skill-pin-6 { animation-delay: 0.6s; }
+.skill-pin-7 { animation-delay: 0.7s; }
+
+/* ==== QUILL-WRITTEN HEADINGS ==== */
+.quill-letter {
+  opacity: 0;
+  transform: scale(0.65) rotate(-6deg) translateY(3px);
+  filter: blur(2.5px);
+  display: inline-block;
+  will-change: transform, opacity, filter;
+}
+
+.quill-letter-active {
+  display: inline-block;
+  will-change: transform, opacity, filter;
+  animation: quill-stroke 0.45s cubic-bezier(0.34, 1.45, 0.64, 1) forwards;
+}
+
+@keyframes quill-stroke {
+  0% {
+    opacity: 0;
+    transform: scale(0.65) rotate(-6deg) translateY(3px);
+    filter: blur(2.5px);
+  }
+  30% {
+    opacity: 0.85;
+    filter: blur(0.8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg) translateY(0);
+    filter: blur(0);
+  }
+}
+
+/* ==== BATTLE FORMATION ==== */
+.battle-field {
+  width: 100%;
+}
+
+.house-soldier {
+  opacity: 0;
+  will-change: transform, opacity;
+  transition: transform 1.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 1s ease-out;
+}
+
+.house-card-north,
+.house-card-east,
+.house-card-top {
+  transform: translateY(24px);
+}
+
+@media (min-width: 768px) {
+  .house-card-north {
+    transform: translateX(-50vw);
+  }
+
+  .house-card-east {
+    transform: translateX(50vw);
+  }
+
+  .house-card-top {
+    transform: translateY(-50vh);
+  }
+}
+
+.battle-field-active .house-soldier {
+  opacity: 1;
+  transform: translate(0) !important;
+}
+
+.battle-field-active .house-soldier {
+  animation: card-clash-impact 0.65s cubic-bezier(0.16, 1, 0.3, 1) 1.25s forwards;
+}
+
+@keyframes card-clash-impact {
+  0% {
+    box-shadow: 0 0 0 transparent;
+    transform: scale(1);
+  }
+  30% {
+    box-shadow: 0 0 24px var(--card-glow-color, var(--fire));
+    transform: scale(1.035);
+  }
+  100% {
+    box-shadow: 0 0 0 transparent;
+    transform: scale(1);
+  }
+}
+
+/* ==== RAVEN FLIGHT ==== */
+@keyframes raven-glide {
+  0% {
+    transform: translateX(-10vw) translateY(25px);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(105vw) translateY(-15px);
+    opacity: 0;
+  }
+}
+
+.animate-raven-flight {
+  position: absolute;
+  left: 0;
+  top: 15px;
+  width: 100%;
+  pointer-events: none;
+  z-index: 40;
+  animation: raven-glide 2.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes raven-flap {
+  0%, 100% {
+    transform: scaleY(0.6) scaleX(0.9) rotate(-4deg);
+  }
+  50% {
+    transform: scaleY(1.25) scaleX(1.1) rotate(6deg);
+  }
+}
+
+.animate-raven-wings {
+  animation: raven-flap 0.28s ease-in-out infinite;
+}
+
+.contact-stone-revealed {
+  animation: stone-ignite 0.7s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes stone-ignite {
+  0% {
+    box-shadow: 0 0 0 transparent;
+  }
+  35% {
+    box-shadow: 0 0 20px oklch(0.62 0.12 65 / 0.85);
+  }
+  100% {
+    box-shadow: 0 0 0 transparent;
+  }
+}
+
+/* ==== WEIRWOOD PROGRESS ==== */
+.bg-blood {
+  background-color: var(--color-blood);
+}
+.border-blood {
+  border-color: var(--color-blood);
+}
+.text-blood {
+  color: var(--color-blood);
+}
+
+/* ==== preserve-3d utilities ==== */
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+/* ==== SCROLL OF PROPHECIES ==== */
+.parchment-sheet {
+  background-color: #ebdcb9;
+  background-image: 
+    radial-gradient(circle at 0% 0%, rgba(139, 92, 246, 0.02), transparent 60%),
+    radial-gradient(circle at 100% 100%, rgba(217, 119, 6, 0.02), transparent 60%);
+  border-left: 2px solid #c2b08c;
+  border-right: 2px solid #c2b08c;
+  box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.12), 0 8px 24px rgba(0, 0, 0, 0.25);
+  border-radius: 2px;
+}
+
+.scroll-rod {
+  background: linear-gradient(to right, #2b170e, #5c351f 15%, #2b170e 30%, #5c351f 70%, #2b170e 85%, #1c0e08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+}
+
+.scroll-rod-cap {
+  background: radial-gradient(circle, #cc9e3d, #8f6c20 60%, #5e430c);
+  border: 1px solid #ad832a;
+}
+
+.prophecy-text-line {
+  transition: opacity 0.45s ease-out, filter 0.45s ease-out, transform 0.45s ease-out;
+  opacity: 0;
+  filter: blur(4px);
+  transform: scale(0.96);
+  position: absolute;
+  width: 100%;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%) scale(0.96);
+}
+
+.prophecy-text-line.active {
+  opacity: 1;
+  filter: blur(0);
+  transform: translateY(-50%) scale(1);
+}
+
+/* ==== RAVEN INBOX MOCK ==== */
+@keyframes raven-descend {
+  0% { transform: translate(-50%, -40px) scale(1.6); opacity: 0; }
+  100% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+}
+
+.inbox-raven {
+  animation: raven-descend 0.75s cubic-bezier(0.25, 1, 0.5, 1) 0.5s forwards;
+}
+
+@keyframes seal-crack-left {
+  0% { transform: translate(-100%, -50%) rotate(0deg); opacity: 1; }
+  100% { transform: translate(-135%, -50%) rotate(-12deg); opacity: 0.75; }
+}
+
+@keyframes seal-crack-right {
+  0% { transform: translate(0%, -50%) rotate(0deg); opacity: 1; }
+  100% { transform: translate(35%, -50%) rotate(12deg); opacity: 0.75; }
+}
+
+.inbox-seal-left {
+  animation: seal-crack-left 0.55s cubic-bezier(0.25, 1, 0.5, 1) 1.4s forwards;
+}
+
+.inbox-seal-right {
+  animation: seal-crack-right 0.55s cubic-bezier(0.25, 1, 0.5, 1) 1.4s forwards;
+}
+
+@keyframes letter-slide-out {
+  0% { transform: translate(-50%, -40px); height: 0px; opacity: 0; }
+  100% { transform: translate(-50%, 45px); height: 160px; opacity: 1; }
+}
+
+.inbox-letter {
+  animation: letter-slide-out 0.85s cubic-bezier(0.25, 1, 0.5, 1) 2s forwards;
+}
+
+@keyframes text-ink-reveal {
+  0% { opacity: 0; filter: blur(2px); }
+  100% { opacity: 1; filter: blur(0); }
+}
+
+.inbox-text-active {
+  opacity: 0;
+  animation: text-ink-reveal 0.9s ease-out 2.85s forwards;
+}
+
+/* ==== SPARKLING CARD MOTES ==== */
+@keyframes drift-up-sparkle {
+  0% {
+    transform: translateY(10px) translateZ(10px) scale(0.2);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(-20px) translateZ(25px) scale(1);
+  }
+  85% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-220px) translateZ(40px) scale(0.4) translateX(var(--drift-x, 0px));
+    opacity: 0;
+  }
+}
+
+.sparkle-particle {
+  position: absolute;
+  bottom: 12px;
+  border-radius: 50%;
+  pointer-events: none;
+  will-change: transform, opacity;
+  animation-name: drift-up-sparkle;
+  animation-iteration-count: infinite;
+  animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.sparkle-fire {
+  background-color: var(--color-fire);
+  box-shadow: 0 0 6px var(--color-fire), 0 0 12px var(--color-fire);
+}
+
+.sparkle-ice {
+  background-color: var(--color-ice);
+  box-shadow: 0 0 6px var(--color-ice), 0 0 12px var(--color-ice);
+}
+
+
+
+
+
+
+
+
+
+
 

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Menu } from "lucide-react";
 import heroThrone from "@/assets/hero-throne.jpg";
 import projectQuasar from "@/assets/quasar.png";
@@ -188,6 +188,7 @@ function Index() {
   const [typedName, setTypedName] = useState("");
   const [parallaxPos, setParallaxPos] = useState({ x: 0, y: 0 });
   const [motes, setMotes] = useState<Mote[]>([]);
+  const motesRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState("citadel");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [showCursor, setShowCursor] = useState(true);
@@ -195,10 +196,17 @@ function Index() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    if ("scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
+
     if (sessionStorage.getItem("lc_intro_seen")) {
       setIntroDone(true);
       return;
     }
+
+    window.scrollTo(0, 0);
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = "";
@@ -253,7 +261,7 @@ function Index() {
   // Ambient embers / frost motes
   useEffect(() => {
     const isMobile = window.innerWidth < 560;
-    const count = isMobile ? 14 : 26;
+    const count = isMobile ? 20 : 40;
     const generated: Mote[] = [];
     for (let n = 0; n < count; n++) {
       const isEmber = n % 2 === 0;
@@ -261,10 +269,10 @@ function Index() {
         id: n,
         isEmber,
         size: 2 + Math.random() * 3,
-        left: isEmber ? 55 + Math.random() * 38 : 7 + Math.random() * 38,
-        drift: Math.random() * 40 - 20,
-        duration: 6 + Math.random() * 6,
-        delay: Math.random() * 8,
+        left: Math.random() * 94 + 3,
+        drift: Math.random() * 50 - 25,
+        duration: 5 + Math.random() * 8,
+        delay: Math.random() * 10,
       });
     }
     setMotes(generated);
@@ -281,11 +289,104 @@ function Index() {
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
+  // Scroll-linked background shift and ember/frost intensity — fire at top, ice at bottom
+  useEffect(() => {
+    const updateScrollDynamics = () => {
+      const el = motesRef.current;
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = docHeight > 0 ? Math.min(scrollTop / docHeight, 1) : 0;
+
+      // Update motes intensities
+      if (el) {
+        el.style.setProperty("--ember-intensity", String(1 - progress * 0.82));
+        el.style.setProperty("--frost-intensity", String(0.1 + progress * 0.9));
+        el.style.setProperty("--mote-brightness", String(1 + progress * 0.5));
+      }
+
+      // Calculate background color shift from warm gold-obsidian to deep ice blue-black
+      // Top: oklch(0.14 0.012 60) -> Bottom: oklch(0.09 0.02 245)
+      const bgLightness = 0.14 - progress * 0.05;
+      const bgChroma = 0.012 + progress * 0.008;
+      const bgHue = 60 + progress * 185;
+
+      // Glow 1: Sunset/Fire orange at top (L=0.35, C=0.09, H=40) -> Cold blue (L=0.18, C=0.04, H=240)
+      const glow1Lightness = 0.35 - progress * 0.17;
+      const glow1Chroma = 0.09 - progress * 0.05;
+      const glow1Hue = 40 + progress * 200;
+      const glow1Opacity = 0.28 - progress * 0.08;
+
+      // Glow 2: Deep blue at bottom (L=0.33, C=0.12, H=220)
+      const glow2Lightness = 0.28 + progress * 0.05;
+      const glow2Chroma = 0.07 + progress * 0.05;
+      const glow2Hue = 230 - progress * 10;
+      const glow2Opacity = 0.28 + progress * 0.17;
+
+      // Set values directly on body to trigger background shift without react renders
+      const bodyStyle = document.body.style;
+      bodyStyle.setProperty("--background-dynamic", `oklch(${bgLightness} ${bgChroma} ${bgHue})`);
+      bodyStyle.setProperty("--bg-glow-1", `oklch(${glow1Lightness} ${glow1Chroma} ${glow1Hue} / ${glow1Opacity})`);
+      bodyStyle.setProperty("--bg-glow-2", `oklch(${glow2Lightness} ${glow2Chroma} ${glow2Hue} / ${glow2Opacity})`);
+    };
+
+    window.addEventListener("scroll", updateScrollDynamics, { passive: true });
+    updateScrollDynamics();
+    return () => window.removeEventListener("scroll", updateScrollDynamics);
+  }, []);
+
 
   return (
     <TooltipProvider delayDuration={300}>
       <div className="min-h-screen bg-background text-foreground">
         {!introDone && <ColdOpen onDone={finishIntro} />}
+
+        {/* Global scroll progress weirwood branch navigator */}
+        <ThreeEyedRavenProgress />
+
+        {/* Global scroll-linked ember / frost motes */}
+        <div className="motes-global" ref={motesRef} aria-hidden="true">
+          <div className="motes-ember-layer">
+            {motes
+              .filter((m) => m.isEmber)
+              .map((m) => (
+                <span
+                  key={m.id}
+                  className="mote ember"
+                  style={
+                    {
+                      width: `${m.size}px`,
+                      height: `${m.size}px`,
+                      left: `${m.left}%`,
+                      "--drift": `${m.drift}px`,
+                      animationDuration: `${m.duration}s`,
+                      animationDelay: `${m.delay}s`,
+                    } as React.CSSProperties
+                  }
+                />
+              ))}
+          </div>
+          <div className="motes-frost-layer">
+            {motes
+              .filter((m) => !m.isEmber)
+              .map((m) => (
+                <span
+                  key={m.id}
+                  className="mote frost"
+                  style={
+                    {
+                      width: `${m.size}px`,
+                      height: `${m.size}px`,
+                      left: `${m.left}%`,
+                      "--drift": `${m.drift}px`,
+                      animationDuration: `${m.duration}s`,
+                      animationDelay: `${m.delay}s`,
+                    } as React.CSSProperties
+                  }
+                />
+              ))}
+          </div>
+        </div>
+
         {/* Top raven bar */}
         <header
           className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
@@ -388,23 +489,6 @@ function Index() {
           id="top"
           className="relative min-h-screen flex items-center justify-center overflow-hidden"
         >
-          {/* Motes particle layer */}
-          <div className="motes" aria-hidden="true">
-            {motes.map((m) => (
-              <span
-                key={m.id}
-                className={`mote ${m.isEmber ? "ember" : "frost"}`}
-                style={{
-                  width: `${m.size}px`,
-                  height: `${m.size}px`,
-                  left: `${m.left}%`,
-                  "--drift": `${m.drift}px`,
-                  animationDuration: `${m.duration}s`,
-                  animationDelay: `${m.delay}s`,
-                } as React.CSSProperties}
-              />
-            ))}
-          </div>
 
           {/* Hero background image - optimized to load a blank 0-byte stub on screens under 640px for mobile performance */}
           <picture>
@@ -459,48 +543,18 @@ function Index() {
         </section>
 
         {/* HOUSES / SPECIALTIES */}
-        <section className="relative py-16 md:py-32 px-6">
+        <section id="sigils" className="relative py-16 md:py-32 px-6">
           <div className="max-w-6xl mx-auto">
             <SectionHeading kicker="The Great Houses" title="Sigils of the Craft" />
-            <ScrollReveal>
-              <div className="mt-16 grid md:grid-cols-3 gap-8">
-                {HOUSES.map((h, i) => (
-                  <Card
-                    key={h.name}
-                    className="group relative border-border bg-card/50 backdrop-blur-sm hover:border-bronze transition-all duration-500 animate-drift rounded-none"
-                    style={{ animationDelay: `${i * 0.7}s` }}
-                  >
-                    <div
-                      className={`absolute -top-3 left-8 px-3 py-1 text-[0.6rem] font-display tracking-[0.3em] uppercase ${
-                        h.tone === "fire"
-                          ? "bg-background text-fire text-glow-fire"
-                          : "bg-background text-ice text-glow-ice"
-                      }`}
-                    >
-                      {h.tone === "fire" ? "◈ Fire" : "❄ Ice"}
-                    </div>
-                    <CardHeader className="pb-0">
-                      <CardTitle className="font-display text-2xl tracking-widest">
-                        {h.name}
-                      </CardTitle>
-                      <p className="mt-2 text-sm text-bronze tracking-[0.2em] uppercase font-display">
-                        {h.role}
-                      </p>
-                    </CardHeader>
-                    <CardContent>
-                      <Separator className="my-6 bg-border" />
-                      <p className="italic text-muted-foreground leading-relaxed">
-                        "{h.quote}"
-                      </p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </ScrollReveal>
+            <BattleFormation />
           </div>
         </section>
 
+        {/* SCROLL OF PROPHECIES */}
+        <ScrollOfProphecies />
+
         {/* PROJECTS */}
+        <IronGateReveal>
         <section id="projects" className="relative py-16 md:py-32 px-6">
           <div className="max-w-6xl mx-auto">
             <SectionHeading
@@ -511,86 +565,27 @@ function Index() {
             <div className="mt-20 space-y-24">
               {PROJECTS.map((p, i) => (
                 <ScrollReveal key={p.name}>
-                  <article
-                    className={`grid md:grid-cols-2 gap-10 items-center ${
-                      i % 2 === 1 ? "md:[&>*:first-child]:order-2" : ""
-                    }`}
-                  >
-                    <div className="relative group">
-                      <div
-                        className={`absolute -inset-2 blur-2xl opacity-40 transition group-hover:opacity-70 ${
-                          p.tone === "fire" ? "bg-fire" : "bg-ice"
-                        }`}
-                      />
-                      <img
-                        src={p.image}
-                        alt={`${p.name} diorama`}
-                        loading="lazy"
-                        width={1024}
-                        height={1024}
-                        className="relative w-full aspect-square object-cover border border-bronze/40 grayscale-15 hover:grayscale-0 transition duration-700"
-                      />
-                    </div>
-                    <div>
-                      <p className="font-display text-xs tracking-[0.5em] uppercase text-bronze">
-                        {p.house}
-                      </p>
-                      <h3
-                        className={`mt-3 font-display text-3xl md:text-4xl ${
-                          p.tone === "fire" ? "text-glow-fire" : "text-glow-ice"
-                        }`}
-                      >
-                        <span className="mr-3">{p.sigil}</span>
-                        {p.name}
-                      </h3>
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        {p.tech.map((t) => (
-                          <Badge
-                            key={t}
-                            variant="outline"
-                            className="border-bronze/40 text-muted-foreground font-display text-[0.65rem] tracking-[0.2em] uppercase rounded-none"
-                          >
-                            {t}
-                          </Badge>
-                        ))}
-                      </div>
-                      <Separator className="mt-6 w-24 bg-bronze/60" />
-                       <p className="mt-6 text-lg leading-relaxed text-parchment/80">
-                        {p.body}
-                      </p>
-                      <div className="mt-8 flex flex-wrap gap-4">
-                        {p.liveUrl && (
-                          <Button
-                            variant="outline"
-                            asChild
-                            className="border-bronze/50 text-bronze font-display text-[0.65rem] tracking-[0.25em] uppercase hover:bg-bronze/10 rounded-none h-auto py-2.5 px-5"
-                          >
-                            <a href={p.liveUrl} target="_blank" rel="noopener noreferrer">
-                              ◈ Enter Keep
-                            </a>
-                          </Button>
-                        )}
-                        {p.githubUrl && (
-                          <Button
-                            variant="ghost"
-                            asChild
-                            className="text-muted-foreground hover:text-parchment font-display text-[0.65rem] tracking-[0.25em] uppercase rounded-none h-auto py-2.5 px-5"
-                          >
-                            <a href={p.githubUrl} target="_blank" rel="noopener noreferrer">
-                              View Scrolls
-                            </a>
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </article>
+                  <ParallaxProjectCard
+                    image={p.image}
+                    title={p.name}
+                    tone={p.tone}
+                    house={p.house}
+                    sigil={p.sigil}
+                    tech={p.tech}
+                    body={p.body}
+                    liveUrl={p.liveUrl}
+                    githubUrl={p.githubUrl}
+                    reverse={i % 2 === 1}
+                  />
                 </ScrollReveal>
               ))}
             </div>
           </div>
         </section>
+        </IronGateReveal>
 
         {/* EXPERIENCE */}
+        <IronGateReveal>
         <section
           id="experience"
           className="relative py-16 md:py-32 px-6 bg-linear-to-b from-transparent via-obsidian/40 to-transparent"
@@ -601,31 +596,17 @@ function Index() {
               title="The Chronicles"
               subtitle="Oaths sworn, banners raised, and lessons learned across the years."
             />
-            <ScrollReveal>
-              <ol className="mt-20 relative border-l border-bronze/40 pl-8 space-y-16">
-                {CHRONICLES.map((c) => (
-                  <li key={c.title} className="relative">
-                    <span className="absolute -left-10.25 top-2 w-4 h-4 rotate-45 border border-bronze bg-background" />
-                    <span className="absolute -left-9.25 top-2.5 w-2 h-2 rotate-45 bg-fire animate-flicker" />
-                    <p className="font-display text-[0.7rem] tracking-[0.4em] uppercase text-bronze">
-                      {c.year}
-                    </p>
-                    <h3 className="mt-2 font-display text-2xl">{c.title}</h3>
-                    <p className="mt-1 text-sm italic text-muted-foreground">
-                      {c.stack}
-                    </p>
-                    <ul className="mt-5 space-y-2 text-parchment/80">
-                      {c.deeds.map((d) => (
-                        <li key={d} className="flex gap-3">
-                          <span className="text-fire mt-1.5 shrink-0">✧</span>
-                          <span>{d}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </li>
-                ))}
-              </ol>
-            </ScrollReveal>
+            <UnfurlingTimeline>
+              {CHRONICLES.map((c) => (
+                <TimelineItem
+                  key={c.title}
+                  year={c.year}
+                  title={c.title}
+                  stack={c.stack}
+                  deeds={c.deeds}
+                />
+              ))}
+            </UnfurlingTimeline>
 
             {/* Education, Skills & Extracurriculars — Tabs */}
             <ScrollReveal>
@@ -669,36 +650,7 @@ function Index() {
                   </TabsContent>
 
                   <TabsContent value="arts">
-                    <Card className="border-border bg-card/60 backdrop-blur-sm rounded-none">
-                      <CardContent className="pt-6 space-y-6">
-                        {SKILLS.map((cat) => (
-                          <div key={cat.category} className="space-y-2">
-                            <h4 className="font-display text-[0.7rem] tracking-[0.25em] uppercase text-bronze">
-                              {cat.category}
-                            </h4>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2.5 font-body">
-                              {cat.items.map((s) => (
-                                <Tooltip key={s.name}>
-                                  <TooltipTrigger asChild>
-                                    <div className="flex items-center gap-2 text-parchment/90 cursor-default hover:text-bronze transition-colors">
-                                      <span className="text-fire text-[0.6rem]">◆</span>
-                                      <span>{s.name}</span>
-                                    </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent
-                                    side="top"
-                                    className="bg-card border border-bronze/40 text-parchment font-body"
-                                  >
-                                    {s.hint}
-                                  </TooltipContent>
-                                </Tooltip>
-                              ))}
-                            </div>
-                            <Separator className="bg-border/30 last:hidden" />
-                          </div>
-                        ))}
-                      </CardContent>
-                    </Card>
+                    <WesterosSkillsMap active={activeTab === "arts"} />
                   </TabsContent>
 
                   <TabsContent value="deeds">
@@ -723,6 +675,7 @@ function Index() {
             </ScrollReveal>
           </div>
         </section>
+        </IronGateReveal>
 
         {/* CONTACT */}
         <section id="contact" className="relative py-16 md:py-32 px-6">
@@ -733,28 +686,29 @@ function Index() {
               quests of code, commissions, or council."
             </p>
 
-            <ScrollReveal>
-              <div className="mt-14 grid sm:grid-cols-3 gap-4">
-                <ContactStone
-                  label="Raven"
-                  value="lakshychauhan076@gmail.com"
-                  href="mailto:lakshychauhan076@gmail.com"
-                  tone="fire"
-                />
-                <ContactStone
-                  label="Scrolls"
-                  value="github.com/lakshychauhan"
-                  href="https://github.com/lakshychauhan"
-                  tone="ice"
-                />
-                <ContactStone
-                  label="Court"
-                  value="linkedin.com/in/lakshychauhan"
-                  href="https://linkedin.com/in/lakshychauhan"
-                  tone="fire"
-                />
-              </div>
-            </ScrollReveal>
+            {/* Dynamic Raven Postbox mock UI sequence */}
+            <RavenInboxMock />
+
+            <RavenFlightContainer>
+              <ContactStone
+                label="Raven"
+                value="lakshychauhan076@gmail.com"
+                href="mailto:lakshychauhan076@gmail.com"
+                tone="fire"
+              />
+              <ContactStone
+                label="Scrolls"
+                value="github.com/lakshychauhan"
+                href="https://github.com/lakshychauhan"
+                tone="ice"
+              />
+              <ContactStone
+                label="Court"
+                value="linkedin.com/in/lakshychauhan"
+                href="https://linkedin.com/in/lakshychauhan"
+                tone="fire"
+              />
+            </RavenFlightContainer>
 
 
           </div>
@@ -816,23 +770,73 @@ function SectionHeading({
   title: string;
   subtitle?: string;
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.unobserve(el);
+        }
+      },
+      {
+        threshold: 0.1,
+        rootMargin: "0px 0px -40px 0px"
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.unobserve(el);
+  }, []);
+
   return (
-    <div className="text-center">
-      <p className="font-display text-[0.7rem] tracking-[0.6em] uppercase text-bronze">
-        ✦ {kicker} ✦
+    <div ref={containerRef} className="text-center select-none py-4">
+      {/* Kicker with fading ornaments */}
+      <p className="font-display text-[0.7rem] tracking-[0.6em] uppercase text-bronze flex items-center justify-center gap-2">
+        <span className={`transition-opacity duration-700 delay-1000 ${isVisible ? "opacity-100" : "opacity-0"}`}>✦</span>
+        <span className={`transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"}`}>{kicker}</span>
+        <span className={`transition-opacity duration-700 delay-1000 ${isVisible ? "opacity-100" : "opacity-0"}`}>✦</span>
       </p>
-      <h2 className="mt-5 font-display font-bold text-4xl md:text-5xl text-parchment">
-        {title}
+
+      {/* Quill-written Title */}
+      <h2 className="mt-5 font-display font-bold text-4xl md:text-5xl text-parchment flex flex-wrap justify-center overflow-hidden py-1">
+        {title.split("").map((char, index) => (
+          <span
+            key={index}
+            className={`inline-block whitespace-pre ${isVisible ? "quill-letter-active" : "quill-letter"}`}
+            style={{
+              animationDelay: `${index * 0.035}s`,
+            }}
+          >
+            {char}
+          </span>
+        ))}
       </h2>
-      <Separator className="mx-auto mt-6 w-32 bg-linear-to-r from-transparent via-bronze to-transparent" />
+
+      {/* Expanding Separator line */}
+      <div 
+        className={`mx-auto mt-6 h-px w-32 bg-linear-to-r from-transparent via-bronze to-transparent origin-center transition-transform duration-1000 delay-500 ${
+          isVisible ? "scale-x-100" : "scale-x-0"
+        }`}
+      />
+
+      {/* Fading Subtitle */}
       {subtitle && (
-        <p className="mt-6 italic text-muted-foreground max-w-xl mx-auto">
+        <p className={`mt-6 italic text-muted-foreground max-w-xl mx-auto transition-all duration-1000 delay-700 ${
+          isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
+        }`}>
           {subtitle}
         </p>
       )}
     </div>
   );
 }
+
 
 function ContactStone({
   label,
@@ -910,6 +914,1118 @@ function ScrollReveal({ children, className = "" }: { children: React.ReactNode;
     </div>
   );
 }
+
+function IronGateReveal({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsOpen(entry.isIntersecting);
+      },
+      {
+        threshold: 0.05,
+        rootMargin: "0px 0px -40px 0px",
+      }
+    );
+
+    observer.observe(el);
+
+    return () => {
+      observer.unobserve(el);
+    };
+  }, []);
+
+  return (
+    <div ref={ref} className={`iron-gate-section ${className}`}>
+      {children}
+      <div
+        className={`iron-gate iron-gate-left ${isOpen ? "gate-open" : ""}`}
+        aria-hidden="true"
+      />
+      <div
+        className={`iron-gate iron-gate-right ${isOpen ? "gate-open" : ""}`}
+        aria-hidden="true"
+      />
+      <div
+        className={`gate-light ${isOpen ? "gate-light-active" : ""}`}
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
+
+function UnfurlingTimeline({ children }: { children: React.ReactNode }) {
+  const containerRef = useRef<HTMLOListElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const el = containerRef.current;
+      if (!el) return;
+
+      const rect = el.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const activeY = viewportHeight * 0.65; // line draws down to 65% of viewport height
+
+      // Calculate progress based on relative position to activeY
+      const progress = Math.min(Math.max((activeY - rect.top) / rect.height, 0), 1);
+      el.style.setProperty("--timeline-progress", String(progress));
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  return (
+    <ol ref={containerRef} className="mt-20 relative pl-8 space-y-16 unfurling-timeline">
+      {/* Background timeline line (gray/dim) */}
+      <div className="absolute left-0 top-2 bottom-2 w-[2px] bg-bronze/15 -translate-x-1/2" />
+      {/* Animated timeline line (drawn) */}
+      <div
+        className="absolute left-0 top-2 bottom-2 w-[2px] bg-linear-to-b from-bronze via-fire to-ice origin-top transition-transform duration-150 ease-out -translate-x-1/2"
+        style={{ transform: `scaleY(var(--timeline-progress, 0))` }}
+      />
+      {children}
+    </ol>
+  );
+}
+
+function TimelineItem({ year, title, stack, deeds }: { year: string; title: string; stack: string; deeds: string[] }) {
+  const itemRef = useRef<HTMLLIElement>(null);
+  const [isRevealed, setIsRevealed] = useState(false);
+
+  useEffect(() => {
+    const el = itemRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsRevealed(entry.isIntersecting);
+      },
+      {
+        threshold: 0.1,
+        rootMargin: "0px 0px -35% 0px", // triggers when element reaches 65% of the viewport from top
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.unobserve(el);
+  }, []);
+
+  return (
+    <li ref={itemRef} className={`relative timeline-item ${isRevealed ? "revealed" : ""}`}>
+      {/* Diamond border */}
+      <span className={`absolute -left-10.25 top-2 w-4 h-4 rotate-45 border border-bronze bg-background timeline-diamond ${isRevealed ? "ignited" : "scale-50 opacity-40"}`} />
+      {/* Glowing inner fire dot */}
+      <span className={`absolute -left-9.25 top-2.5 w-2 h-2 rotate-45 bg-fire timeline-glow ${isRevealed ? "opacity-100 scale-100 animate-flicker" : "opacity-0 scale-50"}`} />
+      
+      {/* Written text content */}
+      <div className="timeline-content">
+        <p className="font-display text-[0.7rem] tracking-[0.4em] uppercase text-bronze">
+          {year}
+        </p>
+        <h3 className="mt-2 font-display text-2xl">{title}</h3>
+        <p className="mt-1 text-sm italic text-muted-foreground">
+          {stack}
+        </p>
+        <ul className="mt-5 space-y-2 text-parchment/80">
+          {deeds.map((d) => (
+            <li key={d} className="flex gap-3">
+              <span className="text-fire mt-1.5 shrink-0">✧</span>
+              <span>{d}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </li>
+  );
+}
+
+function ParallaxProjectCard({
+  image,
+  title,
+  tone,
+  house,
+  sigil,
+  tech,
+  body,
+  liveUrl,
+  githubUrl,
+  reverse,
+}: {
+  image: string;
+  title: string;
+  tone: "fire" | "ice";
+  house: string;
+  sigil: string;
+  tech: string[];
+  body: string;
+  liveUrl?: string;
+  githubUrl?: string;
+  reverse: boolean;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [translateY, setTranslateY] = useState(0);
+  const [glowIntensity, setGlowIntensity] = useState(0.4);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const el = containerRef.current;
+      if (!el) return;
+
+      const rect = el.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const elementCenter = rect.top + rect.height / 2;
+      const viewportCenter = viewportHeight / 2;
+
+      // Distance from center of viewport
+      const distanceFromCenter = elementCenter - viewportCenter;
+
+      // Slow scroll parallax translation
+      const offset = distanceFromCenter * 0.08;
+      setTranslateY(offset);
+
+      // Intensify glow behind the image as it nears the center
+      const maxDistance = viewportHeight / 2 + rect.height / 2;
+      const normalizedDistance = Math.min(Math.abs(distanceFromCenter) / maxDistance, 1);
+      const intensity = 0.35 + (1 - normalizedDistance) * 0.45;
+      setGlowIntensity(intensity);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative py-8 overflow-hidden">
+      <article
+        className={`grid md:grid-cols-2 gap-10 items-center ${
+          reverse ? "md:[&>*:first-child]:order-2" : ""
+        }`}
+      >
+        {/* Image Container with Parallax & Glow */}
+        <div className="relative group overflow-hidden border border-bronze/40">
+          <div
+            className={`absolute -inset-4 blur-3xl transition-opacity duration-300 pointer-events-none ${
+              tone === "fire" ? "bg-fire" : "bg-ice"
+            }`}
+            style={{ opacity: glowIntensity }}
+          />
+          <div
+            className="w-full aspect-square overflow-hidden relative"
+            style={{
+              transform: `translateY(${translateY}px) scale(1.08)`,
+              transition: "transform 0.1s ease-out",
+            }}
+          >
+            <img
+              src={image}
+              alt={`${title} diorama`}
+              loading="lazy"
+              width={1024}
+              height={1024}
+              className="w-full h-full object-cover grayscale-15 hover:grayscale-0 transition duration-700"
+            />
+          </div>
+        </div>
+
+        {/* Text Container */}
+        <div className="z-10 bg-background/40 backdrop-blur-xs p-4 md:p-6 border border-transparent hover:border-bronze/20 transition-all duration-500">
+          <p className="font-display text-xs tracking-[0.5em] uppercase text-bronze">
+            {house}
+          </p>
+          <h3
+            className={`mt-3 font-display text-3xl md:text-4xl ${
+              tone === "fire" ? "text-glow-fire" : "text-glow-ice"
+            }`}
+          >
+            <span className="mr-3">{sigil}</span>
+            {title}
+          </h3>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {tech.map((t) => (
+              <Badge
+                key={t}
+                variant="outline"
+                className="border-bronze/40 text-muted-foreground font-display text-[0.65rem] tracking-[0.2em] uppercase rounded-none"
+              >
+                {t}
+              </Badge>
+            ))}
+          </div>
+          <Separator className="mt-6 w-24 bg-bronze/60" />
+          <p className="mt-6 text-lg leading-relaxed text-parchment/80">
+            {body}
+          </p>
+          <div className="mt-8 flex flex-wrap gap-4">
+            {liveUrl && (
+              <Button
+                variant="outline"
+                asChild
+                className="border-bronze/50 text-bronze font-display text-[0.65rem] tracking-[0.25em] uppercase hover:bg-bronze/10 rounded-none h-auto py-2.5 px-5"
+              >
+                <a href={liveUrl} target="_blank" rel="noopener noreferrer">
+                  ◈ Enter Keep
+                </a>
+              </Button>
+            )}
+            {githubUrl && (
+              <Button
+                variant="ghost"
+                asChild
+                className="text-muted-foreground hover:text-parchment font-display text-[0.65rem] tracking-[0.25em] uppercase rounded-none h-auto py-2.5 px-5"
+              >
+                <a href={githubUrl} target="_blank" rel="noopener noreferrer">
+                  View Scrolls
+                </a>
+              </Button>
+            )}
+          </div>
+        </div>
+      </article>
+    </div>
+  );
+}
+
+function WesterosSkillsMap({ active }: { active: boolean }) {
+  // Mobile rendering falls back to clean, list-based layout
+  const mobileList = (
+    <Card className="border-border bg-card/60 backdrop-blur-sm rounded-none">
+      <CardContent className="pt-6 space-y-6">
+        {SKILLS.map((cat) => (
+          <div key={cat.category} className="space-y-2">
+            <h4 className="font-display text-[0.7rem] tracking-[0.25em] uppercase text-bronze">
+              {cat.category}
+            </h4>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 font-body">
+              {cat.items.map((s) => (
+                <Tooltip key={s.name}>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-2 text-parchment/90 cursor-default hover:text-bronze transition-colors">
+                      <span className="text-fire text-[0.6rem]">◆</span>
+                      <span>{s.name}</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    className="bg-card border border-bronze/40 text-parchment font-body z-50 max-w-xs"
+                  >
+                    {s.hint}
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            </div>
+            <Separator className="bg-border/30 last:hidden" />
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+
+  if (!active) return null;
+
+  const REGIONS = [
+    {
+      category: "Languages",
+      title: "The North (Winterfell)",
+      x: "20%",
+      y: "15%",
+      tone: "ice" as const,
+      items: SKILLS[0].items,
+    },
+    {
+      category: "Frameworks",
+      title: "The Riverlands (Riverrun)",
+      x: "20%",
+      y: "45%",
+      tone: "ice" as const,
+      items: SKILLS[1].items,
+    },
+    {
+      category: "Databases & Tools",
+      title: "Stormlands & East",
+      x: "65%",
+      y: "58%",
+      tone: "fire" as const,
+      items: SKILLS[2].items,
+    },
+    {
+      category: "AI / LLM Technologies",
+      title: "Dragonstone",
+      x: "70%",
+      y: "28%",
+      tone: "fire" as const,
+      items: SKILLS[3].items,
+    },
+    {
+      category: "Core CS Concepts",
+      title: "The Reach (Oldtown)",
+      x: "32%",
+      y: "78%",
+      tone: "fire" as const,
+      items: SKILLS[4].items,
+    },
+  ];
+
+  return (
+    <>
+      {/* Mobile view */}
+      <div className="block md:hidden">
+        {mobileList}
+      </div>
+
+      {/* Desktop Westeros-themed Map */}
+      <div className="hidden md:block" key={active ? "map-active" : "map-inactive"}>
+        <div className="skills-map-container rounded-none">
+          {/* Animated cartographic grid and coastlines */}
+          <svg
+            className="absolute inset-0 w-full h-full opacity-30"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 800 600"
+            preserveAspectRatio="none"
+          >
+            {/* West Coastline */}
+            <path
+              d="M 120 0 C 140 100, 80 180, 130 250 C 180 320, 90 400, 110 500 C 130 550, 70 580, 100 600"
+              fill="none"
+              stroke="var(--color-bronze)"
+              strokeWidth="1.5"
+              strokeDasharray="4 6"
+              className="map-line"
+            />
+
+            {/* The Wall */}
+            <line
+              x1="5%"
+              y1="5%"
+              x2="95%"
+              y2="5%"
+              stroke="var(--color-ice)"
+              strokeWidth="3.5"
+              strokeDasharray="6 4"
+              className="map-line"
+            />
+
+            {/* Castle Trade Routes (Dynamic connections) */}
+            <path d="M 160 90 L 160 270" fill="none" stroke="var(--border)" strokeWidth="0.8" strokeDasharray="3 3" />
+            <path d="M 160 270 L 560 168" fill="none" stroke="var(--border)" strokeWidth="0.8" strokeDasharray="3 3" />
+            <path d="M 160 270 L 256 468" fill="none" stroke="var(--border)" strokeWidth="0.8" strokeDasharray="3 3" />
+            <path d="M 560 168 L 520 348" fill="none" stroke="var(--border)" strokeWidth="0.8" strokeDasharray="3 3" />
+
+            {/* Cartographer's Compass Rose */}
+            <g transform="translate(710, 80)" stroke="var(--color-bronze)" strokeWidth="1" fill="none" className="opacity-80">
+              <circle cx="0" cy="0" r="30" strokeDasharray="2 3" />
+              <circle cx="0" cy="0" r="8" />
+              <line x1="-40" y1="0" x2="40" y2="0" />
+              <line x1="0" y1="-40" x2="0" y2="40" />
+              <polygon points="0,-35 4,-8 0,-4 -4,-8" fill="var(--color-bronze)" />
+              <polygon points="0,35 4,8 0,4 -4,8" />
+              <polygon points="-35,0 -8,4 -4,0 -8,-4" />
+              <polygon points="35,0 8,4 4,0 8,-4" />
+              <text x="-4" y="-45" fontFamily="var(--font-display)" fontSize="9" fill="var(--color-bronze)">N</text>
+            </g>
+
+            {/* Cartographic Labels */}
+            <text x="30" y="320" fontFamily="var(--font-display)" fontSize="10" letterSpacing="0.4em" fill="oklch(0.62 0.12 65 / 0.3)" transform="rotate(-90 30 320)">SUNSET SEA</text>
+            <text x="760" y="360" fontFamily="var(--font-display)" fontSize="10" letterSpacing="0.4em" fill="oklch(0.62 0.12 65 / 0.3)" transform="rotate(90 760 360)">NARROW SEA</text>
+            <text x="320" y="30" fontFamily="var(--font-display)" fontSize="10" letterSpacing="0.3em" fill="oklch(0.78 0.12 220 / 0.3)">BEYOND THE WALL</text>
+          </svg>
+
+          {/* Interactive Region Castle Nodes */}
+          {REGIONS.map(({ title, x, y, tone, items }) => (
+            <div
+              key={title}
+              className={`map-region-node border border-bronze/40 bg-card/90 backdrop-blur-xs p-3.5 rounded-none w-[180px] shadow-sm ${
+                tone === "fire"
+                  ? "hover:border-fire hover:shadow-[0_0_15px_var(--color-fire)]"
+                  : "hover:border-ice hover:shadow-[0_0_15px_var(--color-ice)]"
+              }`}
+              style={{ left: x, top: y }}
+            >
+              <div className="flex items-center gap-2 border-b border-border pb-1.5 mb-2">
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    tone === "fire"
+                      ? "bg-fire shadow-[0_0_6px_var(--color-fire)] animate-flicker"
+                      : "bg-ice shadow-[0_0_6px_var(--color-ice)] animate-flicker"
+                  }`}
+                />
+                <span className="font-display text-[0.62rem] tracking-wider text-bronze uppercase truncate">
+                  {title}
+                </span>
+              </div>
+              <div className="flex flex-col gap-1 font-body text-xs text-parchment/80">
+                {items.map((s, idx) => (
+                  <Tooltip key={s.name}>
+                    <TooltipTrigger asChild>
+                      <div
+                        className={`flex items-center gap-1.5 cursor-default hover:text-bronze transition-colors skill-pin skill-pin-${
+                          idx + 1
+                        }`}
+                      >
+                        <span className="text-[0.55rem] opacity-50">◆</span>
+                        <span className="truncate">{s.name}</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="top"
+                      className="bg-card border border-bronze/40 text-parchment font-body z-50 max-w-xs"
+                    >
+                      {s.hint}
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function BattleFormation() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isActive, setIsActive] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsActive(true);
+          observer.unobserve(el);
+        }
+      },
+      {
+        threshold: 0.1,
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.unobserve(el);
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className={`mt-16 grid md:grid-cols-3 gap-8 w-full battle-field ${
+        isActive ? "battle-field-active" : ""
+      }`}
+    >
+      {HOUSES.map((h, i) => {
+        let alignClass = "";
+        let glowColor = "var(--fire)";
+
+        if (i === 0) {
+          alignClass = "house-card-north"; // Jon Snow slides from left (North)
+          glowColor = "var(--color-ice)";
+        } else if (i === 1) {
+          alignClass = "house-card-east";  // Dany slides from right (East)
+          glowColor = "var(--color-fire)";
+        } else if (i === 2) {
+          alignClass = "house-card-top";   // Night King descends from top (Beyond the Wall)
+          glowColor = "var(--color-ice)";
+        }
+
+        return (
+          <div
+            key={h.name}
+            className={`house-soldier ${alignClass}`}
+            style={{ "--card-glow-color": glowColor } as React.CSSProperties}
+          >
+            <TiltCard tone={h.tone} sigilType={i === 0 ? "stark" : i === 1 ? "targaryen" : "walker"}>
+              <Card className="group relative border-border bg-card/50 backdrop-blur-sm hover:border-bronze transition-all duration-500 animate-drift rounded-none h-full preserve-3d">
+                <div
+                  className={`absolute -top-3 left-8 px-3 py-1 text-[0.6rem] font-display tracking-[0.3em] uppercase ${
+                    h.tone === "fire"
+                      ? "bg-background text-fire text-glow-fire"
+                      : "bg-background text-ice text-glow-ice"
+                  }`}
+                  style={{ transform: "translateZ(15px)" }}
+                >
+                  {h.tone === "fire" ? "◈ Fire" : "❄ Ice"}
+                </div>
+                <CardHeader className="pb-0" style={{ transform: "translateZ(30px)" }}>
+                  <CardTitle className="font-display text-2xl tracking-widest">
+                    {h.name}
+                  </CardTitle>
+                  <p className="mt-2 text-sm text-bronze tracking-[0.2em] uppercase font-display">
+                    {h.role}
+                  </p>
+                </CardHeader>
+                <CardContent style={{ transform: "translateZ(20px)" }}>
+                  <Separator className="my-6 bg-border" />
+                  <p className="italic text-muted-foreground leading-relaxed">
+                    "{h.quote}"
+                  </p>
+                </CardContent>
+              </Card>
+            </TiltCard>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function RavenFlightContainer({ children }: { children: React.ReactNode }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [flightActive, setFlightActive] = useState(false);
+  const [crossIndex, setCrossIndex] = useState(-1); // -1: not started, 0: crossed card 1, 1: crossed card 2, 2: crossed card 3
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setFlightActive(true);
+          observer.unobserve(el);
+        }
+      },
+      {
+        threshold: 0.1,
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.unobserve(el);
+  }, []);
+
+  // Sync intervals to simulate raven crossing each card at 2.4s flight duration
+  useEffect(() => {
+    if (!flightActive) return;
+
+    // Card 1 lights up at 0.5s
+    const t0 = setTimeout(() => setCrossIndex(0), 450);
+    // Card 2 lights up at 1.1s
+    const t1 = setTimeout(() => setCrossIndex(1), 1100);
+    // Card 3 lights up at 1.7s
+    const t2 = setTimeout(() => setCrossIndex(2), 1700);
+
+    return () => {
+      clearTimeout(t0);
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [flightActive]);
+
+  return (
+    <div ref={containerRef} className="relative mt-14 w-full overflow-hidden py-6">
+      {/* Animated flying raven silhouette */}
+      {flightActive && (
+        <div className="animate-raven-flight">
+          <svg
+            viewBox="0 0 100 100"
+            className="w-14 h-14 fill-bronze animate-raven-wings"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            {/* Detailed silhouette of a flying raven */}
+            <path d="M50 20 C42 35 12 38 2 42 C18 46 32 45 42 38 C38 52 30 78 45 82 C50 82 42 55 52 40 C62 45 76 46 92 42 C82 38 52 35 50 20 Z" />
+          </svg>
+        </div>
+      )}
+
+      {/* Render children/cards passing down the reveal index state */}
+      <div className="grid sm:grid-cols-3 gap-4">
+        {React.Children.map(children, (child, idx) => {
+          const revealed = crossIndex >= idx;
+          return (
+            <div
+              className={`transition-all duration-800 transform ${
+                revealed
+                  ? "opacity-100 translate-y-0 scale-100 contact-stone-revealed"
+                  : "opacity-0 translate-y-6 scale-95 pointer-events-none"
+              }`}
+            >
+              {child}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function TiltCard({
+  children,
+  tone,
+  sigilType,
+}: {
+  children: React.ReactNode;
+  tone: "fire" | "ice";
+  sigilType: "stark" | "targaryen" | "walker";
+}) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [rotateX, setRotateX] = useState(0);
+  const [rotateY, setRotateY] = useState(0);
+  const [parallaxY, setParallaxY] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+  const [particles, setParticles] = useState<{ id: number; left: number; delay: number; size: number; duration: number; driftX: number }[]>([]);
+
+  useEffect(() => {
+    if (isHovered) {
+      const list = Array.from({ length: 10 }).map((_, i) => ({
+        id: i,
+        left: Math.random() * 85 + 7,
+        size: Math.random() * 3 + 2.5,
+        delay: Math.random() * 1.2,
+        duration: Math.random() * 1.5 + 1.2,
+        driftX: (Math.random() - 0.5) * 55,
+      }));
+      setParticles(list);
+    } else {
+      setParticles([]);
+    }
+  }, [isHovered]);
+
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+
+    const handleScroll = () => {
+      const rect = el.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const elementCenter = rect.top + rect.height / 2;
+      const offset = (elementCenter - viewportHeight / 2) * 0.05;
+      setParallaxY(offset);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = cardRef.current;
+    if (!el) return;
+
+    const rect = el.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const width = rect.width;
+    const height = rect.height;
+
+    const normalizedX = x / width - 0.5;
+    const normalizedY = y / height - 0.5;
+
+    setRotateX(-normalizedY * 12);
+    setRotateY(normalizedX * 12);
+  };
+
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    setRotateX(0);
+    setRotateY(0);
+  };
+
+  const getSigilSVG = () => {
+    const strokeColor = tone === "fire" ? "var(--color-fire)" : "var(--color-ice)";
+    if (sigilType === "stark") {
+      return (
+        <svg
+          viewBox="0 0 100 100"
+          className="absolute right-2 bottom-2 w-28 h-28 opacity-10 transition-all duration-300 pointer-events-none group-hover:opacity-25"
+          style={{ transform: `translateY(${parallaxY}px) translateZ(25px)` }}
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth="1.2"
+        >
+          <path d="M30 35 L40 20 L50 32 L60 32 L70 20 L80 35 L85 50 Q80 70 50 80 Q20 70 15 50 Z" />
+          <path d="M45 50 L40 58 L48 60" />
+          <path d="M60 50 L65 58 L57 60" />
+          <path d="M48 70 Q50 74 52 70" />
+        </svg>
+      );
+    }
+    if (sigilType === "targaryen") {
+      return (
+        <svg
+          viewBox="0 0 100 100"
+          className="absolute right-2 bottom-2 w-28 h-28 opacity-10 transition-all duration-300 pointer-events-none group-hover:opacity-25"
+          style={{ transform: `translateY(${parallaxY}px) translateZ(25px)` }}
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth="1.2"
+        >
+          <path d="M50 15 C30 25 15 45 15 65 C15 80 35 85 50 85 C65 85 85 80 85 65 C85 45 70 25 50 15 Z" />
+          <path d="M30 45 C35 50 40 50 50 45 C60 50 65 50 70 45" />
+          <path d="M50 45 L50 85" strokeDasharray="2 3" />
+          <path d="M25 60 C35 65 65 65 75 60" />
+        </svg>
+      );
+    }
+    return (
+      <svg
+        viewBox="0 0 100 100"
+        className="absolute right-2 bottom-2 w-28 h-28 opacity-10 transition-all duration-300 pointer-events-none group-hover:opacity-25"
+        style={{ transform: `translateY(${parallaxY}px) translateZ(25px)` }}
+        fill="none"
+        stroke={strokeColor}
+        strokeWidth="1.2"
+      >
+        <path d="M50 50 A 10 10 0 1 0 60 50 A 20 20 0 1 0 50 70 A 30 30 0 1 0 20 50 A 40 40 0 1 0 50 90" strokeDasharray="3 3" />
+        <circle cx="50" cy="50" r="4" fill={strokeColor} />
+      </svg>
+    );
+  };
+
+  return (
+    <div ref={cardRef} onMouseMove={handleMouseMove} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} className="relative w-full h-full group preserve-3d" style={{ transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(${isHovered ? 1.02 : 1}, ${isHovered ? 1.02 : 1}, 1)`, transition: isHovered ? "transform 0.1s ease-out" : "transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)" }}>
+      {children}
+      {getSigilSVG()}
+      {particles.map((p) => (
+        <span
+          key={p.id}
+          className={`sparkle-particle ${tone === "fire" ? "sparkle-fire" : "sparkle-ice"}`}
+          style={{
+            left: `${p.left}%`,
+            width: `${p.size}px`,
+            height: `${p.size}px`,
+            animationDelay: `${p.delay}s`,
+            animationDuration: `${p.duration}s`,
+            "--drift-x": `${p.driftX}px`,
+          } as React.CSSProperties}
+        />
+      ))}
+    </div>
+  );
+}
+
+function ScrollOfProphecies() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const el = containerRef.current;
+      if (!el) return;
+
+      const rect = el.getBoundingClientRect();
+      const sectionHeight = rect.height;
+      const viewportHeight = window.innerHeight;
+
+      const start = rect.top + window.scrollY;
+      const totalScroll = sectionHeight - viewportHeight;
+      const currentScroll = window.scrollY - start;
+      const progress = Math.min(Math.max(currentScroll / totalScroll, 0), 1);
+      setScrollProgress(progress);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const OATHS = [
+    {
+      kicker: "The First Oath",
+      text: "A developer who does not test is like a ranger without a sword. The code must hold against the winter winds of production.",
+    },
+    {
+      kicker: "The Second Oath",
+      text: "Simplicity is the shield of the builder. Complex structures crumble like Harrenhal; write code that stands the test of ages.",
+    },
+    {
+      kicker: "The Third Oath",
+      text: "The web must load swift as a shadowcat. A slow keep is easily besieged, and users will flee to other realms.",
+    },
+    {
+      kicker: "The Fourth Oath",
+      text: "Tech debt is a Lannister debt; it always collects interest in blood. Pay your code debts early, lest your keep collapse.",
+    },
+  ];
+
+  const unrollProgress = Math.min(scrollProgress * 6.6, 1);
+  const readingProgress = scrollProgress >= 0.15 ? (scrollProgress - 0.15) / 0.85 : 0;
+  const activeIndex = scrollProgress >= 0.15 ? Math.min(Math.floor(readingProgress * OATHS.length), OATHS.length - 1) : -1;
+
+  return (
+    <section id="prophecies" ref={containerRef} className="relative h-[300vh] bg-background border-t border-b border-border/10">
+      <div className="sticky top-0 h-screen w-full flex flex-col items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 bg-radial-gradient(circle_at_center,transparent_40%,#020617_90%) pointer-events-none" />
+        <div className="relative flex flex-col items-center justify-center w-full max-w-xl px-6 h-[480px]">
+          {/* Top Wooden Rod */}
+          <div
+            className="absolute z-30 w-[95%] sm:w-[500px] h-6 rounded-full scroll-rod flex items-center justify-between px-3"
+            style={{
+              transform: `translateY(${-150 * unrollProgress}px)`,
+              transition: "transform 0.1s ease-out",
+            }}
+          >
+            <div className="w-3 h-8 rounded-sm scroll-rod-cap -ml-4" />
+            <div className="w-3 h-8 rounded-sm scroll-rod-cap -mr-4" />
+          </div>
+
+          {/* Parchment Sheet Body */}
+          <div
+            className="absolute z-20 w-[90%] sm:w-[480px] parchment-sheet overflow-hidden flex flex-col items-center justify-center"
+            style={{
+              height: `${300 * unrollProgress}px`,
+              top: `calc(50% - ${150 * unrollProgress}px)`,
+              transition: "height 0.1s ease-out, top 0.1s ease-out",
+            }}
+          >
+            <div className="absolute inset-0 opacity-[0.03] bg-contain bg-center bg-no-repeat pointer-events-none flex items-center justify-center">
+              <svg viewBox="0 0 100 100" className="w-64 h-64 fill-stone-900">
+                <path d="M50 10 L60 35 L85 35 L65 50 L75 75 L50 60 L25 75 L35 50 L15 35 L40 35 Z" />
+              </svg>
+            </div>
+            <div className="relative w-full h-full px-8 py-6 select-none">
+              {OATHS.map((oath, idx) => {
+                const isActive = activeIndex === idx;
+                return (
+                  <div
+                    key={idx}
+                    className={`prophecy-text-line text-center px-4 ${isActive ? "active" : ""}`}
+                  >
+                    <p className="font-display text-[0.62rem] tracking-[0.3em] uppercase text-stone-600 mb-3">
+                      ◈ {oath.kicker} ◈
+                    </p>
+                    <p className="font-body italic text-sm sm:text-base leading-relaxed text-stone-800 font-medium">
+                      "{oath.text}"
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Bottom Wooden Rod */}
+          <div
+            className="absolute z-30 w-[95%] sm:w-[500px] h-6 rounded-full scroll-rod flex items-center justify-between px-3"
+            style={{
+              transform: `translateY(${150 * unrollProgress}px)`,
+              transition: "transform 0.1s ease-out",
+            }}
+          >
+            <div className="w-3 h-8 rounded-sm scroll-rod-cap -ml-4" />
+            <div className="w-3 h-8 rounded-sm scroll-rod-cap -mr-4" />
+          </div>
+        </div>
+        <div
+          className={`absolute bottom-8 font-display text-[0.6rem] tracking-[0.4em] uppercase text-muted-foreground transition-opacity duration-500 ${
+            scrollProgress > 0.9 ? "opacity-0" : "opacity-75 animate-flicker"
+          }`}
+        >
+          Scroll down to unroll the prophecy
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function RavenInboxMock() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isActive, setIsActive] = useState(false);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsActive(true);
+          observer.unobserve(el);
+        }
+      },
+      {
+        threshold: 0.15,
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.unobserve(el);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="flex justify-center items-center h-[260px] relative mb-4 mt-8 select-none">
+      {/* Outer Envelope Wrapper */}
+      <div className={`relative w-[280px] h-[100px] border border-bronze/30 bg-card/40 backdrop-blur-sm rounded-sm`}>
+        
+        {/* Envelope back flap details */}
+        <div className="absolute inset-0 bg-linear-to-b from-stone-900/40 to-stone-950/20 pointer-events-none" />
+
+        {/* Flying Raven landing on seal */}
+        <div className={`absolute -top-12 left-1/2 -translate-x-1/2 z-40 opacity-0 pointer-events-none ${isActive ? "inbox-raven" : ""}`}>
+          <svg viewBox="0 0 100 100" className="w-12 h-12 fill-bronze animate-raven-wings">
+            <path d="M50 20 C42 35 12 38 2 42 C18 46 32 45 42 38 C38 52 30 78 45 82 C50 82 42 55 52 40 C62 45 76 46 92 42 C82 38 52 35 50 20 Z" />
+          </svg>
+        </div>
+
+        {/* Scroll Letter sliding out */}
+        <div 
+          className={`absolute left-1/2 z-10 w-[250px] bg-[#ecdcb9] border border-stone-850 px-4 py-3 rounded-xs shadow-md overflow-hidden flex flex-col justify-center items-center pointer-events-none opacity-0 ${
+            isActive ? "inbox-letter" : ""
+          }`}
+          style={{ transform: "translate(-50%, -40px)" }}
+        >
+          {/* Scribe message */}
+          <div className={`text-center ${isActive ? "inbox-text-active" : "opacity-0"}`}>
+            <p className="font-display text-[0.55rem] tracking-[0.2em] uppercase text-stone-600 mb-1">
+              ◈ Scribe Notification ◈
+            </p>
+            <p className="font-body italic text-[0.72rem] leading-relaxed text-stone-800 font-semibold px-1">
+              "A raven has landed from the Citadel. Select a scroll below to establish contact with the Maester."
+            </p>
+          </div>
+        </div>
+
+        {/* Envelope Front triangular flap */}
+        <div 
+          className="absolute inset-x-0 bottom-0 top-0 bg-linear-to-t from-stone-900/30 to-stone-900/10 border-t border-bronze/10 pointer-events-none" 
+          style={{ clipPath: "polygon(0 0, 50% 65%, 100% 0, 100% 100%, 0 100%)" }}
+        />
+
+        {/* Split Red Wax Seals */}
+        {/* Left half */}
+        <div 
+          className={`absolute left-1/2 top-[35px] -translate-x-[100%] -translate-y-1/2 z-30 w-5 h-10 bg-red-800 border border-red-950 rounded-l-full flex items-center justify-end pr-0.5 shadow-md ${
+            isActive ? "inbox-seal-left" : ""
+          }`}
+        >
+          <div className="w-1.5 h-1.5 rounded-full bg-red-650" />
+        </div>
+        {/* Right half */}
+        <div 
+          className={`absolute left-1/2 top-[35px] z-30 w-5 h-10 bg-red-800 border border-red-950 rounded-r-full flex items-center justify-start pl-0.5 shadow-md ${
+            isActive ? "inbox-seal-right" : ""
+          }`}
+        >
+          <div className="w-1.5 h-1.5 rounded-full bg-red-650" />
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+
+function ThreeEyedRavenProgress() {
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [activeSection, setActiveSection] = useState("top");
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = docHeight > 0 ? scrollTop / docHeight : 0;
+      setScrollProgress(progress);
+
+      // Identify active section based on bounding rect offsets
+      const sectionIds = ["top", "sigils", "prophecies", "projects", "experience", "contact"];
+      let current = "top";
+      for (const id of sectionIds) {
+        const el = document.getElementById(id);
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= window.innerHeight * 0.45) {
+            current = id;
+          }
+        }
+      }
+      setActiveSection(current);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const sections = [
+    { id: "top", label: "Top" },
+    { id: "sigils", label: "Sigils" },
+    { id: "prophecies", label: "Oaths" },
+    { id: "projects", label: "Projects" },
+    { id: "experience", label: "History" },
+    { id: "contact", label: "Raven" },
+  ];
+
+  return (
+    <div className="fixed right-6 top-1/2 -translate-y-1/2 z-50 hidden lg:flex flex-col items-center select-none pointer-events-none">
+      <div className="relative w-12 h-64 flex justify-center items-center">
+        {/* Vertical trunk line */}
+        <div className="absolute top-0 bottom-0 w-0.5 bg-bronze/20 rounded-full" />
+
+        {/* Animated blood-red drawn line */}
+        <div
+          className="absolute top-0 w-0.5 bg-blood origin-top transition-transform duration-75"
+          style={{ height: "100%", transform: `scaleY(${scrollProgress})` }}
+        />
+
+        {/* Floating Glowing Eye (Three-Eyed Raven) */}
+        <div
+          className="absolute w-4 h-4 rounded-full bg-blood shadow-[0_0_12px_var(--color-blood)] border border-parchment flex items-center justify-center transition-all duration-75"
+          style={{ top: `${scrollProgress * 100}%`, transform: "translateY(-50%)" }}
+        >
+          {/* Inner eye pupil */}
+          <div className="w-1.5 h-1.5 rounded-full bg-parchment animate-pulse" />
+        </div>
+
+        {/* Section Leaf Node Markers & Labels */}
+        {sections.map((sec, idx) => {
+          const positionPercent = (idx / (sections.length - 1)) * 100;
+          const isActive = activeSection === sec.id;
+
+          return (
+            <div
+              key={sec.id}
+              className="absolute left-1/2 -translate-x-1/2 flex items-center group pointer-events-auto cursor-pointer"
+              style={{ top: `${positionPercent}%`, transform: "translate(-50%, -50%)" }}
+              onClick={() => {
+                const el = document.getElementById(sec.id);
+                if (el) el.scrollIntoView({ behavior: "smooth" });
+              }}
+            >
+              {/* Weirwood Leaf (red when active, bronze-dim when inactive) */}
+              <div
+                className={`w-3.5 h-3.5 rotate-45 border transition-all duration-500 flex items-center justify-center ${
+                  isActive
+                    ? "bg-blood border-blood shadow-[0_0_10px_var(--color-blood)] scale-110"
+                    : "bg-background border-bronze/40 scale-90 hover:border-bronze"
+                }`}
+              >
+                {/* Midrib detail */}
+                <div className="w-px h-2.5 bg-parchment/30 -rotate-45" />
+              </div>
+
+              {/* Text Label (shown on hover, or always highlighted when active) */}
+              <span
+                className={`absolute right-6 font-display text-[0.55rem] tracking-[0.25em] uppercase whitespace-nowrap transition-all duration-300 ${
+                  isActive
+                    ? "text-blood opacity-100 translate-x-0"
+                    : "text-muted-foreground opacity-0 translate-x-2 group-hover:opacity-85 group-hover:translate-x-0"
+                }`}
+              >
+                {sec.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+
+
+
+
 
 function ColdOpen({ onDone }: { onDone: () => void }) {
   const [phase, setPhase] = useState<"play" | "out" | "gone">("play");
@@ -1026,6 +2142,7 @@ function ColdOpen({ onDone }: { onDone: () => void }) {
       {/* Skip */}
       <button
         type="button"
+        suppressHydrationWarning
         onClick={() => {
           setPhase("gone");
           onDone();
