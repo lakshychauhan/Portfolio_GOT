@@ -5,6 +5,7 @@ import heroThrone from "@/assets/hero-throne.jpg";
 import projectQuasar from "@/assets/quasar.png";
 import projectPortfolio from "@/assets/portfolio.png";
 import projectPaperVault from "@/assets/papervault.png";
+import ironThroneForge from "@/assets/iron-throne-forge.png";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +62,8 @@ const PROJECTS = [
     tone: "ice" as const,
     liveUrl: "https://github.com/lakshychauhan",
     githubUrl: "https://github.com/lakshychauhan",
+    highlightTitle: "MAESTER CODEX: CONCURRENCY",
+    highlightText: "Deploys SQLite in Write-Ahead Logging (WAL) mode for simultaneous admin queries and guest registrations without locks.",
   },
   {
     name: "PaperVault",
@@ -72,6 +75,8 @@ const PROJECTS = [
     tone: "fire" as const,
     liveUrl: "https://github.com/lakshychauhan",
     githubUrl: "https://github.com/lakshychauhan",
+    highlightTitle: "MAESTER CODEX: EMBEDDINGS",
+    highlightText: "Leverages pgvector hierarchical cosine similarity indexing to map semantic relationships across uploaded research scrolls.",
   },
   {
     name: "Game of Thrones Developer Portfolio",
@@ -83,6 +88,8 @@ const PROJECTS = [
     tone: "ice" as const,
     liveUrl: "https://github.com/lakshychauhan/Portfolio-GOT",
     githubUrl: "https://github.com/lakshychauhan/Portfolio-GOT",
+    highlightTitle: "MAESTER CODEX: OPTIMIZATION",
+    highlightText: "Drives scroll timelines via hardware-accelerated CSS custom properties on body, maintaining a fluid 60fps render cycle.",
   },
 ];
 
@@ -553,6 +560,9 @@ function Index() {
         {/* SCROLL OF PROPHECIES */}
         <ScrollOfProphecies />
 
+        {/* FORGE OF THE IRON THRONE */}
+        <ForgeOfThrone />
+
         {/* PROJECTS */}
         <IronGateReveal>
         <section id="projects" className="relative py-16 md:py-32 px-6">
@@ -576,6 +586,8 @@ function Index() {
                     liveUrl={p.liveUrl}
                     githubUrl={p.githubUrl}
                     reverse={i % 2 === 1}
+                    highlightTitle={p.highlightTitle}
+                    highlightText={p.highlightText}
                   />
                 </ScrollReveal>
               ))}
@@ -1057,6 +1069,8 @@ function ParallaxProjectCard({
   liveUrl,
   githubUrl,
   reverse,
+  highlightTitle,
+  highlightText,
 }: {
   image: string;
   title: string;
@@ -1068,10 +1082,33 @@ function ParallaxProjectCard({
   liveUrl?: string;
   githubUrl?: string;
   reverse: boolean;
+  highlightTitle?: string;
+  highlightText?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [translateY, setTranslateY] = useState(0);
   const [glowIntensity, setGlowIntensity] = useState(0.4);
+  const [isRevealed, setIsRevealed] = useState(false);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsRevealed(true);
+          observer.unobserve(el);
+        }
+      },
+      {
+        threshold: 0.25,
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.unobserve(el);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -1103,7 +1140,52 @@ function ParallaxProjectCard({
   }, []);
 
   return (
-    <div ref={containerRef} className="relative py-8 overflow-hidden">
+    <div ref={containerRef} className={`relative py-8 overflow-visible md:overflow-visible ${isRevealed ? "blueprint-active" : ""}`}>
+      {/* Blueprint SVG Line (Only shown on Desktop md: and above) */}
+      {highlightTitle && (
+        <svg
+          viewBox="0 0 100 100"
+          className="absolute inset-0 w-full h-full pointer-events-none z-0 hidden md:block overflow-visible"
+          preserveAspectRatio="none"
+        >
+          {reverse ? (
+            <path
+              d="M 54 34 L 46 -10 L 38 -10"
+              fill="none"
+              className="blueprint-path"
+            />
+          ) : (
+            <path
+              d="M 46 34 L 54 -10 L 62 -10"
+              fill="none"
+              className="blueprint-path"
+            />
+          )}
+        </svg>
+      )}
+
+      {/* Floating Blueprint Badge */}
+      {highlightTitle && highlightText && (
+        <div
+          className={`absolute hidden md:flex flex-col z-30 max-w-[210px] bg-card/95 border border-bronze/50 p-3 rounded-none shadow-lg blueprint-badge pointer-events-none`}
+          style={{
+            top: "-10%",
+            left: reverse ? "18%" : "62%",
+            transform: "translateY(0)",
+          }}
+        >
+          <div className="flex items-center gap-1.5 border-b border-border pb-1 mb-1.5">
+            <span className="w-1.5 h-1.5 bg-bronze animate-pulse" />
+            <span className="font-display text-[0.55rem] tracking-wider text-bronze uppercase">
+              {highlightTitle}
+            </span>
+          </div>
+          <p className="font-body text-[0.68rem] italic text-muted-foreground leading-relaxed">
+            {highlightText}
+          </p>
+        </div>
+      )}
+
       <article
         className={`grid md:grid-cols-2 gap-10 items-center ${
           reverse ? "md:[&>*:first-child]:order-2" : ""
@@ -1274,15 +1356,16 @@ function WesterosSkillsMap({ active }: { active: boolean }) {
   ];
 
   return (
-    <>
-      {/* Mobile view */}
-      <div className="block md:hidden">
-        {mobileList}
+    <div 
+      className="w-full overflow-x-auto overflow-y-hidden scrollbar-thin border border-border bg-card/25 backdrop-blur-xs rounded-none relative" 
+      key={active ? "map-active" : "map-inactive"}
+    >
+      {/* Mobile Swipe Guidance Banner */}
+      <div className="md:hidden sticky left-0 right-0 top-0 bg-bronze/15 border-b border-bronze/20 text-center py-1.5 text-[0.55rem] tracking-[0.2em] uppercase text-bronze z-30 flex items-center justify-center gap-2 select-none pointer-events-none">
+        Swipe ↔ to explore the Map of Westeros
       </div>
-
-      {/* Desktop Westeros-themed Map */}
-      <div className="hidden md:block" key={active ? "map-active" : "map-inactive"}>
-        <div className="skills-map-container rounded-none">
+      
+      <div className="skills-map-container shrink-0 min-w-[780px] md:w-full h-[580px] rounded-none">
           {/* Animated cartographic grid and coastlines */}
           <svg
             className="absolute inset-0 w-full h-full opacity-30"
@@ -1317,30 +1400,19 @@ function WesterosSkillsMap({ active }: { active: boolean }) {
             <path d="M 160 270 L 560 168" fill="none" stroke="var(--border)" strokeWidth="0.8" strokeDasharray="3 3" />
             <path d="M 160 270 L 256 468" fill="none" stroke="var(--border)" strokeWidth="0.8" strokeDasharray="3 3" />
             <path d="M 560 168 L 520 348" fill="none" stroke="var(--border)" strokeWidth="0.8" strokeDasharray="3 3" />
+            <path d="M 520 348 L 256 468" fill="none" stroke="var(--border)" strokeWidth="0.8" strokeDasharray="3 3" />
+            <path d="M 560 168 L 256 468" fill="none" stroke="var(--border)" strokeWidth="0.8" strokeDasharray="3 3" />
 
-            {/* Cartographer's Compass Rose */}
-            <g transform="translate(710, 80)" stroke="var(--color-bronze)" strokeWidth="1" fill="none" className="opacity-80">
-              <circle cx="0" cy="0" r="30" strokeDasharray="2 3" />
-              <circle cx="0" cy="0" r="8" />
-              <line x1="-40" y1="0" x2="40" y2="0" />
-              <line x1="0" y1="-40" x2="0" y2="40" />
-              <polygon points="0,-35 4,-8 0,-4 -4,-8" fill="var(--color-bronze)" />
-              <polygon points="0,35 4,8 0,4 -4,8" />
-              <polygon points="-35,0 -8,4 -4,0 -8,-4" />
-              <polygon points="35,0 8,4 4,0 8,-4" />
-              <text x="-4" y="-45" fontFamily="var(--font-display)" fontSize="9" fill="var(--color-bronze)">N</text>
-            </g>
-
-            {/* Cartographic Labels */}
-            <text x="30" y="320" fontFamily="var(--font-display)" fontSize="10" letterSpacing="0.4em" fill="oklch(0.62 0.12 65 / 0.3)" transform="rotate(-90 30 320)">SUNSET SEA</text>
-            <text x="760" y="360" fontFamily="var(--font-display)" fontSize="10" letterSpacing="0.4em" fill="oklch(0.62 0.12 65 / 0.3)" transform="rotate(90 760 360)">NARROW SEA</text>
-            <text x="320" y="30" fontFamily="var(--font-display)" fontSize="10" letterSpacing="0.3em" fill="oklch(0.78 0.12 220 / 0.3)">BEYOND THE WALL</text>
+            {/* Map Compasses */}
+            <circle cx="90%" cy="85%" r="20" fill="none" stroke="var(--color-bronze)" strokeWidth="0.8" strokeDasharray="2 3" />
+            <line x1="90%" y1="80%" x2="90%" y2="90%" stroke="var(--color-bronze)" strokeWidth="0.8" />
+            <line x1="87%" y1="85%" x2="93%" y2="85%" stroke="var(--color-bronze)" strokeWidth="0.8" />
           </svg>
 
-          {/* Interactive Region Castle Nodes */}
-          {REGIONS.map(({ title, x, y, tone, items }) => (
+          {/* Region Nodes */}
+          {REGIONS.map(({ category, title, x, y, tone, items }) => (
             <div
-              key={title}
+              key={category}
               className={`map-region-node border border-bronze/40 bg-card/90 backdrop-blur-xs p-3.5 rounded-none w-[180px] shadow-sm ${
                 tone === "fire"
                   ? "hover:border-fire hover:shadow-[0_0_15px_var(--color-fire)]"
@@ -1386,7 +1458,6 @@ function WesterosSkillsMap({ active }: { active: boolean }) {
           ))}
         </div>
       </div>
-    </>
   );
 }
 
@@ -1915,6 +1986,184 @@ function RavenInboxMock() {
   );
 }
 
+function ForgeOfThrone() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const el = containerRef.current;
+      if (!el) return;
+
+      const rect = el.getBoundingClientRect();
+      const sectionHeight = rect.height;
+      const viewportHeight = window.innerHeight;
+
+      const start = rect.top + window.scrollY;
+      const totalScroll = sectionHeight - viewportHeight;
+      const currentScroll = window.scrollY - start;
+      const progress = Math.min(Math.max(currentScroll / totalScroll, 0), 1);
+      setScrollProgress(progress);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const p1 = Math.min(Math.max((scrollProgress - 0.05) / 0.15, 0), 1);
+  const p2 = Math.min(Math.max((scrollProgress - 0.20) / 0.15, 0), 1);
+  const p3 = Math.min(Math.max((scrollProgress - 0.35) / 0.15, 0), 1);
+  const p4 = Math.min(Math.max((scrollProgress - 0.50) / 0.15, 0), 1);
+  const p5 = Math.min(Math.max((scrollProgress - 0.65) / 0.15, 0), 1);
+  const isForged = scrollProgress >= 0.82;
+  const showFlash = scrollProgress >= 0.78 && scrollProgress <= 0.88;
+
+  return (
+    <section id="forge" ref={containerRef} className="relative h-[250vh] bg-background border-t border-b border-border/10">
+      <div className="sticky top-0 h-screen w-full flex flex-col items-center justify-center overflow-hidden">
+        {/* Ambient Dark Fire Chamber Glow */}
+        <div className="absolute inset-0 bg-radial-gradient(circle_at_center,transparent_30%,#020617_90%) pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,rgba(217,119,6,0.06),transparent_60%)] pointer-events-none" />
+
+        {/* Forge Platform Title */}
+        <div className="absolute top-16 text-center select-none">
+          <p className="font-display text-[0.6rem] tracking-[0.4em] uppercase text-bronze/60">
+            ✦ Chapter I.V ✦
+          </p>
+          <h3 className="font-display text-2xl tracking-[0.25em] uppercase text-parchment text-glow-fire mt-2">
+            The Forge of Banners
+          </h3>
+        </div>
+
+        {/* The Assembly Canvas */}
+        <div className="relative w-[320px] h-[360px] flex items-center justify-center overflow-visible">
+          {/* Individual Sword Components (moving into center) */}
+
+          {/* Left Wing Sword (Ice) */}
+          <div
+            className="absolute z-10 origin-center transition-all duration-75"
+            style={{
+              transform: `translate(${-120 + p1 * 120}px, ${50 - p1 * 50}px) rotate(${-45 + p1 * 15}deg)`,
+              opacity: p1,
+            }}
+          >
+            <SwordSVG color="var(--color-ice)" />
+          </div>
+
+          {/* Right Wing Sword (Fire) */}
+          <div
+            className="absolute z-10 origin-center transition-all duration-75"
+            style={{
+              transform: `translate(${120 - p2 * 120}px, ${50 - p2 * 50}px) rotate(${45 - p2 * 15}deg)`,
+              opacity: p2,
+            }}
+          >
+            <SwordSVG color="var(--color-fire)" />
+          </div>
+
+          {/* Top Down Central Blade */}
+          <div
+            className="absolute z-20 origin-center transition-all duration-75"
+            style={{
+              transform: `translateY(${-180 + p3 * 180}px) rotate(180deg)`,
+              opacity: p3,
+            }}
+          >
+            <SwordSVG color="var(--color-bronze)" />
+          </div>
+
+          {/* Horizontal Guard Sword Left */}
+          <div
+            className="absolute z-10 origin-center transition-all duration-75"
+            style={{
+              transform: `translate(${-150 + p4 * 110}px, ${80}px) rotate(${-90 + p4 * 45}deg)`,
+              opacity: p4,
+            }}
+          >
+            <SwordSVG color="var(--border)" />
+          </div>
+
+          {/* Horizontal Guard Sword Right */}
+          <div
+            className="absolute z-10 origin-center transition-all duration-75"
+            style={{
+              transform: `translate(${150 - p4 * 110}px, ${80}px) rotate(${90 - p4 * 45}deg)`,
+              opacity: p4,
+            }}
+          >
+            <SwordSVG color="var(--border)" />
+          </div>
+
+          {/* Master King's Sword (Decending Straight down) */}
+          <div
+            className="absolute z-30 origin-center transition-all duration-75"
+            style={{
+              transform: `translateY(${-220 + p5 * 240}px)`,
+              opacity: p5,
+            }}
+          >
+            <SwordSVG color="var(--color-bronze)" glow="var(--color-fire)" />
+          </div>
+
+          {/* Forged Throne Reveal Overlay */}
+          {isForged && (
+            <div className="absolute inset-0 z-40 flex flex-col items-center justify-center animate-fade-in">
+              <div className="relative w-[280px] h-[280px] rounded-full overflow-hidden border border-bronze/50 shadow-[0_0_30px_rgba(217,119,6,0.35)] bg-stone-950/80">
+                <img
+                  src={ironThroneForge}
+                  alt="Forged Iron Throne"
+                  width={512}
+                  height={512}
+                  className="w-full h-full object-cover animate-pulse-slow scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 pointer-events-none" />
+              </div>
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <span className="sparkle-particle sparkle-fire left-1/4 animate-drift" style={{ animationDelay: '0.1s', animationDuration: '1.5s' }} />
+                <span className="sparkle-particle sparkle-fire left-1/2 animate-drift" style={{ animationDelay: '0.4s', animationDuration: '2.1s' }} />
+                <span className="sparkle-particle sparkle-fire left-3/4 animate-drift" style={{ animationDelay: '0.2s', animationDuration: '1.8s' }} />
+              </div>
+            </div>
+          )}
+
+          {/* Heat distortion / forge flash trigger */}
+          <div
+            className={`absolute inset-[-40px] z-50 bg-radial-gradient(circle_at_center,var(--color-fire)_0%,transparent_75%) pointer-events-none mix-blend-screen transition-all duration-200 ${
+              showFlash ? "opacity-95 scale-110" : "opacity-0 scale-95"
+            }`}
+          />
+        </div>
+
+        {/* Forge status subtext */}
+        <div className="absolute bottom-16 text-center max-w-sm px-6 select-none">
+          <p className={`font-body italic text-sm text-muted-foreground transition-all duration-300 ${isForged ? "opacity-100 scale-100" : "opacity-40 scale-95"}`}>
+            {isForged
+              ? '"A thousand clean commits forged in the fires of resolve. The Throne of Craftsmanship stands complete."'
+              : '"Fusing syntax and framework into a blade of power..."'}
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SwordSVG({ color, glow }: { color: string; glow?: string }) {
+  return (
+    <svg
+      viewBox="0 0 40 120"
+      className="w-10 h-28"
+      style={{ filter: glow ? `drop-shadow(0 0 10px ${glow})` : "none" }}
+    >
+      <path d="M20 10 L23 20 L22 95 L18 95 L17 20 Z" fill={color} stroke="none" />
+      <line x1="20" y1="18" x2="20" y2="92" stroke="rgba(0,0,0,0.4)" strokeWidth="0.8" />
+      <path d="M10 95 L30 95 L30 99 L10 99 Z" fill="var(--color-bronze)" />
+      <path d="M18 99 L22 99 L22 112 L18 112 Z" fill="#2b1a11" />
+      <circle cx="20" cy="115" r="3.5" fill="var(--color-bronze)" />
+    </svg>
+  );
+}
+
 
 function ThreeEyedRavenProgress() {
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -1928,7 +2177,7 @@ function ThreeEyedRavenProgress() {
       setScrollProgress(progress);
 
       // Identify active section based on bounding rect offsets
-      const sectionIds = ["top", "sigils", "prophecies", "projects", "experience", "contact"];
+      const sectionIds = ["top", "sigils", "prophecies", "forge", "projects", "experience", "contact"];
       let current = "top";
       for (const id of sectionIds) {
         const el = document.getElementById(id);
@@ -1951,6 +2200,7 @@ function ThreeEyedRavenProgress() {
     { id: "top", label: "Top" },
     { id: "sigils", label: "Sigils" },
     { id: "prophecies", label: "Oaths" },
+    { id: "forge", label: "Forge" },
     { id: "projects", label: "Projects" },
     { id: "experience", label: "History" },
     { id: "contact", label: "Raven" },
