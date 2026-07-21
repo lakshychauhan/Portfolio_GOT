@@ -459,7 +459,7 @@ function Index() {
         </section>
 
         {/* HOUSES / SPECIALTIES */}
-        <section className="relative py-32 px-6">
+        <section className="relative py-16 md:py-32 px-6">
           <div className="max-w-6xl mx-auto">
             <SectionHeading kicker="The Great Houses" title="Sigils of the Craft" />
             <ScrollReveal>
@@ -501,7 +501,7 @@ function Index() {
         </section>
 
         {/* PROJECTS */}
-        <section id="projects" className="relative py-32 px-6">
+        <section id="projects" className="relative py-16 md:py-32 px-6">
           <div className="max-w-6xl mx-auto">
             <SectionHeading
               kicker="Chapter I"
@@ -593,7 +593,7 @@ function Index() {
         {/* EXPERIENCE */}
         <section
           id="experience"
-          className="relative py-32 px-6 bg-linear-to-b from-transparent via-obsidian/40 to-transparent"
+          className="relative py-16 md:py-32 px-6 bg-linear-to-b from-transparent via-obsidian/40 to-transparent"
         >
           <div className="max-w-4xl mx-auto">
             <SectionHeading
@@ -631,22 +631,22 @@ function Index() {
             <ScrollReveal>
               <div className="mt-24">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" id="skills">
-                  <TabsList className="w-full bg-card/60 border border-border rounded-none h-auto p-1">
+                  <TabsList className="w-full bg-card/60 border border-border rounded-none h-auto p-1 overflow-x-auto">
                     <TabsTrigger
                       value="citadel"
-                      className="font-display text-xs tracking-[0.2em] uppercase rounded-none data-[state=active]:bg-bronze/20 data-[state=active]:text-bronze"
+                      className="font-display text-[0.55rem] sm:text-xs tracking-[0.1em] sm:tracking-[0.2em] uppercase rounded-none data-[state=active]:bg-bronze/20 data-[state=active]:text-bronze whitespace-nowrap"
                     >
                       The Citadel
                     </TabsTrigger>
                     <TabsTrigger
                       value="arts"
-                      className="font-display text-xs tracking-[0.2em] uppercase rounded-none data-[state=active]:bg-bronze/20 data-[state=active]:text-bronze"
+                      className="font-display text-[0.55rem] sm:text-xs tracking-[0.1em] sm:tracking-[0.2em] uppercase rounded-none data-[state=active]:bg-bronze/20 data-[state=active]:text-bronze whitespace-nowrap"
                     >
                       Sworn Arts
                     </TabsTrigger>
                     <TabsTrigger
                       value="deeds"
-                      className="font-display text-xs tracking-[0.2em] uppercase rounded-none data-[state=active]:bg-bronze/20 data-[state=active]:text-bronze"
+                      className="font-display text-[0.55rem] sm:text-xs tracking-[0.1em] sm:tracking-[0.2em] uppercase rounded-none data-[state=active]:bg-bronze/20 data-[state=active]:text-bronze whitespace-nowrap"
                     >
                       Beyond the Wall
                     </TabsTrigger>
@@ -725,7 +725,7 @@ function Index() {
         </section>
 
         {/* CONTACT */}
-        <section id="contact" className="relative py-32 px-6">
+        <section id="contact" className="relative py-16 md:py-32 px-6">
           <div className="max-w-3xl mx-auto text-center">
             <SectionHeading kicker="Final Rite" title="Send a Raven" />
             <p className="mt-8 font-body italic text-lg text-muted-foreground max-w-xl mx-auto">
