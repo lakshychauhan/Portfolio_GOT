@@ -334,7 +334,7 @@ export function InteractiveBannerWeaver() {
           <div className="lg:col-span-6 space-y-6 bg-stone-900/60 p-6 md:p-8 rounded-xl border border-stone-800 backdrop-blur-md shadow-2xl">
             {/* Step 1: Choose House */}
             <div>
-              <label className="block font-display text-xs tracking-wider uppercase text-amber-500 mb-3 flex items-center gap-2">
+              <label className="flex font-display text-xs tracking-wider uppercase text-amber-500 mb-3 items-center gap-2">
                 <Shield className="w-4 h-4 text-amber-400" /> Step 1: Select House Allegiance
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
@@ -377,7 +377,7 @@ export function InteractiveBannerWeaver() {
 
             {/* Step 2: Custom House Title */}
             <div>
-              <label className="block font-display text-xs tracking-wider uppercase text-amber-500 mb-2 flex items-center gap-2">
+              <label className="flex font-display text-xs tracking-wider uppercase text-amber-500 mb-2 items-center gap-2">
                 <Flame className="w-4 h-4 text-amber-400" /> Step 2: Custom Title / Motto
               </label>
               <input
@@ -392,7 +392,7 @@ export function InteractiveBannerWeaver() {
 
             {/* Step 3: Choose Tech Stack */}
             <div>
-              <label className="block font-display text-xs tracking-wider uppercase text-amber-500 mb-2.5 flex items-center gap-2">
+              <label className="flex font-display text-xs tracking-wider uppercase text-amber-500 mb-2.5 items-center gap-2">
                 <Sparkles className="w-4 h-4 text-amber-400" /> Step 3: Select Tech Arsenal (Max 6)
               </label>
               <div className="flex flex-wrap gap-1.5">
@@ -421,7 +421,7 @@ export function InteractiveBannerWeaver() {
               <Button
                 onClick={handleForge}
                 disabled={isForging}
-                className="w-full py-6 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-stone-950 font-display text-sm tracking-[0.2em] uppercase font-bold shadow-[0_0_25px_rgba(245,158,11,0.4)] transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 rounded-lg"
+                className="w-full py-6 bg-linear-to-r from-amber-600 via-amber-500 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-stone-950 font-display text-sm tracking-[0.2em] uppercase font-bold shadow-[0_0_25px_rgba(245,158,11,0.4)] transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 rounded-lg"
               >
                 <Hammer className={`w-5 h-5 ${isForging ? "animate-bounce" : ""}`} />
                 {isForging ? "Striking the Anvil..." : "Strike Anvil & Forge Banner"}
@@ -430,7 +430,7 @@ export function InteractiveBannerWeaver() {
           </div>
 
           {/* Banner Canvas & Visual Result Column (Right) */}
-          <div className="lg:col-span-6 relative flex flex-col items-center justify-center min-h-[480px]">
+          <div className="lg:col-span-6 relative flex flex-col items-center justify-center min-h-120">
             {/* Spark Canvas Overlay */}
             <canvas
               ref={canvasRef}
@@ -447,14 +447,14 @@ export function InteractiveBannerWeaver() {
               }`}
             >
               {/* Banner Hanging Rod */}
-              <div className="w-[106%] -ml-[3%] h-4 bg-gradient-to-r from-amber-900 via-yellow-700 to-amber-900 rounded-full border border-amber-500/50 shadow-lg flex items-center justify-between px-2">
+              <div className="w-[106%] ml-[-3%] h-4 bg-linear-to-r from-amber-900 via-yellow-700 to-amber-900 rounded-full border border-amber-500/50 shadow-lg flex items-center justify-between px-2">
                 <div className="w-3 h-3 rounded-full bg-amber-400 shadow-md" />
                 <div className="w-3 h-3 rounded-full bg-amber-400 shadow-md" />
               </div>
 
               {/* Banner Cloth Body */}
               <div
-                className={`mt-1 p-6 md:p-8 rounded-b-2xl border-2 bg-gradient-to-b ${selectedHouse.bgGradient} ${selectedHouse.borderAccent} shadow-[0_0_35px_rgba(0,0,0,0.8)] relative overflow-hidden text-center`}
+                className={`mt-1 p-6 md:p-8 rounded-b-2xl border-2 bg-linear-to-b ${selectedHouse.bgGradient} ${selectedHouse.borderAccent} shadow-[0_0_35px_rgba(0,0,0,0.8)] relative overflow-hidden text-center`}
                 style={{
                   boxShadow: `0 0 30px ${selectedHouse.glow}`,
                 }}

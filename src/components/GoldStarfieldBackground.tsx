@@ -122,7 +122,7 @@ export function GoldStarfieldBackground() {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-[2] mix-blend-screen opacity-85"
+      className="fixed inset-0 pointer-events-none z-2 mix-blend-screen opacity-85"
       aria-hidden="true"
     />
   );

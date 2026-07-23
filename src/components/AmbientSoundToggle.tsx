@@ -85,7 +85,7 @@ export function AmbientSoundToggle() {
   return (
     <>
       <div
-        className="fixed bottom-6 left-6 z-[60] flex items-center gap-3 select-none"
+        className="fixed bottom-6 left-6 z-60 flex items-center gap-3 select-none"
         onMouseEnter={() => setShowVolume(true)}
         onMouseLeave={() => setShowVolume(false)}
       >

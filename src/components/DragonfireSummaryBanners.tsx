@@ -352,7 +352,7 @@ function BannerCard({
 
       {/* Banner Rod Top — ignites on strike */}
       <div
-        className="w-[104%] -ml-[2%] h-3 bg-gradient-to-r from-amber-950 via-yellow-700 to-amber-950 rounded-full border border-amber-500/40 shadow-md flex items-center justify-between px-1.5 z-20 relative"
+        className="w-[104%] ml-[-2%] h-3 bg-linear-to-r from-amber-950 via-yellow-700 to-amber-950 rounded-full border border-amber-500/40 shadow-md flex items-center justify-between px-1.5 z-20 relative"
         style={{
           animation: isMelted ? "df-rod-ignite 0.8s ease-out" : "none",
         }}
@@ -412,7 +412,7 @@ function BannerCard({
         {isMelted && (
           <div
             key={`sweep-${strikeKey}`}
-            className="absolute inset-0 pointer-events-none z-[1]"
+            className="absolute inset-0 pointer-events-none z-1"
             style={{
               background: `linear-gradient(to top, ${banner.color}40, ${banner.color}15, transparent)`,
               animation: "df-fire-sweep 0.9s ease-out forwards",
@@ -422,7 +422,7 @@ function BannerCard({
 
         {/* Floating ember dots along edges */}
         {isMelted && (
-          <div className="absolute inset-0 pointer-events-none z-[2]">
+          <div className="absolute inset-0 pointer-events-none z-2">
             {[...Array(8)].map((_, i) => (
               <div
                 key={`ember-${i}-${strikeKey}`}

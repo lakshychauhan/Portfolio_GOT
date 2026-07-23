@@ -636,19 +636,19 @@ function Index() {
                   <TabsList className="w-full bg-card/60 border border-border rounded-none h-auto p-1 overflow-x-auto">
                     <TabsTrigger
                       value="citadel"
-                      className="font-display text-[0.55rem] sm:text-xs tracking-[0.1em] sm:tracking-[0.2em] uppercase rounded-none data-[state=active]:bg-bronze/20 data-[state=active]:text-bronze whitespace-nowrap"
+                      className="font-display text-[0.55rem] sm:text-xs tracking-widest sm:tracking-[0.2em] uppercase rounded-none data-[state=active]:bg-bronze/20 data-[state=active]:text-bronze whitespace-nowrap"
                     >
                       The Citadel
                     </TabsTrigger>
                     <TabsTrigger
                       value="arts"
-                      className="font-display text-[0.55rem] sm:text-xs tracking-[0.1em] sm:tracking-[0.2em] uppercase rounded-none data-[state=active]:bg-bronze/20 data-[state=active]:text-bronze whitespace-nowrap"
+                      className="font-display text-[0.55rem] sm:text-xs tracking-widest sm:tracking-[0.2em] uppercase rounded-none data-[state=active]:bg-bronze/20 data-[state=active]:text-bronze whitespace-nowrap"
                     >
                       Sworn Arts
                     </TabsTrigger>
                     <TabsTrigger
                       value="deeds"
-                      className="font-display text-[0.55rem] sm:text-xs tracking-[0.1em] sm:tracking-[0.2em] uppercase rounded-none data-[state=active]:bg-bronze/20 data-[state=active]:text-bronze whitespace-nowrap"
+                      className="font-display text-[0.55rem] sm:text-xs tracking-widest sm:tracking-[0.2em] uppercase rounded-none data-[state=active]:bg-bronze/20 data-[state=active]:text-bronze whitespace-nowrap"
                     >
                       Beyond the Wall
                     </TabsTrigger>
@@ -1013,10 +1013,10 @@ function UnfurlingTimeline({ children }: { children: React.ReactNode }) {
   return (
     <ol ref={containerRef} className="mt-20 relative pl-8 space-y-16 unfurling-timeline">
       {/* Background timeline line (gray/dim) */}
-      <div className="absolute left-0 top-2 bottom-2 w-[2px] bg-bronze/15 -translate-x-1/2" />
+      <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-bronze/15 -translate-x-1/2" />
       {/* Animated timeline line (drawn) */}
       <div
-        className="absolute left-0 top-2 bottom-2 w-[2px] bg-linear-to-b from-bronze via-fire to-ice origin-top transition-transform duration-150 ease-out -translate-x-1/2"
+        className="absolute left-0 top-2 bottom-2 w-0.5 bg-linear-to-b from-bronze via-fire to-ice origin-top transition-transform duration-150 ease-out -translate-x-1/2"
         style={{ transform: `scaleY(var(--timeline-progress, 0))` }}
       />
       {children}
@@ -1184,7 +1184,7 @@ function ParallaxProjectCard({
       {/* Floating Blueprint Badge */}
       {highlightTitle && highlightText && (
         <div
-          className={`absolute hidden md:flex flex-col z-30 max-w-[210px] bg-card/95 border border-bronze/50 p-3 rounded-none shadow-lg blueprint-badge pointer-events-none`}
+          className={`absolute hidden md:flex flex-col z-30 max-w-52.5 bg-card/95 border border-bronze/50 p-3 rounded-none shadow-lg blueprint-badge pointer-events-none`}
           style={{
             top: "-10%",
             left: reverse ? "18%" : "62%",
@@ -1382,7 +1382,7 @@ function WesterosSkillsMap({ active }: { active: boolean }) {
         Swipe ↔ to explore the Map of Westeros
       </div>
       
-      <div className="skills-map-container shrink-0 min-w-[780px] md:w-full h-[580px] rounded-none">
+      <div className="skills-map-container shrink-0 min-w-195 md:w-full h-145 rounded-none">
           {/* Animated cartographic grid and coastlines */}
           <svg
             className="absolute inset-0 w-full h-full opacity-30"
@@ -1430,7 +1430,7 @@ function WesterosSkillsMap({ active }: { active: boolean }) {
           {REGIONS.map(({ category, title, x, y, tone, items }) => (
             <div
               key={category}
-              className={`map-region-node border border-bronze/40 bg-card/90 backdrop-blur-xs p-3.5 rounded-none w-[180px] shadow-sm ${
+              className={`map-region-node border border-bronze/40 bg-card/90 backdrop-blur-xs p-3.5 rounded-none w-45 shadow-sm ${
                 tone === "fire"
                   ? "hover:border-fire hover:shadow-[0_0_15px_var(--color-fire)]"
                   : "hover:border-ice hover:shadow-[0_0_15px_var(--color-ice)]"
@@ -1846,10 +1846,10 @@ function ScrollOfProphecies() {
     <section id="prophecies" ref={containerRef} className="relative h-[300vh] bg-background border-t border-b border-border/10">
       <div className="sticky top-0 h-screen w-full flex flex-col items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-radial-gradient(circle_at_center,transparent_40%,#020617_90%) pointer-events-none" />
-        <div className="relative flex flex-col items-center justify-center w-full max-w-xl px-6 h-[480px]">
+        <div className="relative flex flex-col items-center justify-center w-full max-w-xl px-6 h-120">
           {/* Top Wooden Rod */}
           <div
-            className="absolute z-30 w-[95%] sm:w-[500px] h-6 rounded-full scroll-rod flex items-center justify-between px-3"
+            className="absolute z-30 w-[95%] sm:w-125 h-6 rounded-full scroll-rod flex items-center justify-between px-3"
             style={{
               transform: `translateY(${-150 * unrollProgress}px)`,
               transition: "transform 0.1s ease-out",
@@ -1861,7 +1861,7 @@ function ScrollOfProphecies() {
 
           {/* Parchment Sheet Body */}
           <div
-            className="absolute z-20 w-[90%] sm:w-[480px] parchment-sheet overflow-hidden flex flex-col items-center justify-center"
+            className="absolute z-20 w-[90%] sm:w-120 parchment-sheet overflow-hidden flex flex-col items-center justify-center"
             style={{
               height: `${300 * unrollProgress}px`,
               top: `calc(50% - ${150 * unrollProgress}px)`,
@@ -1895,7 +1895,7 @@ function ScrollOfProphecies() {
 
           {/* Bottom Wooden Rod */}
           <div
-            className="absolute z-30 w-[95%] sm:w-[500px] h-6 rounded-full scroll-rod flex items-center justify-between px-3"
+            className="absolute z-30 w-[95%] sm:w-125 h-6 rounded-full scroll-rod flex items-center justify-between px-3"
             style={{
               transform: `translateY(${150 * unrollProgress}px)`,
               transition: "transform 0.1s ease-out",
@@ -1942,9 +1942,9 @@ function RavenInboxMock() {
   }, []);
 
   return (
-    <div ref={containerRef} className="flex justify-center items-center h-[260px] relative mb-4 mt-8 select-none">
+    <div ref={containerRef} className="flex justify-center items-center h-65 relative mb-4 mt-8 select-none">
       {/* Outer Envelope Wrapper */}
-      <div className={`relative w-[280px] h-[100px] border border-bronze/30 bg-card/40 backdrop-blur-sm rounded-sm`}>
+      <div className={`relative w-70 h-25 border border-bronze/30 bg-card/40 backdrop-blur-sm rounded-sm`}>
         
         {/* Envelope back flap details */}
         <div className="absolute inset-0 bg-linear-to-b from-stone-900/40 to-stone-950/20 pointer-events-none" />
@@ -1958,7 +1958,7 @@ function RavenInboxMock() {
 
         {/* Scroll Letter sliding out */}
         <div 
-          className={`absolute left-1/2 z-10 w-[250px] bg-[#ecdcb9] border border-stone-850 px-4 py-3 rounded-xs shadow-md overflow-hidden flex flex-col justify-center items-center pointer-events-none opacity-0 ${
+          className={`absolute left-1/2 z-10 w-62.5 bg-[#ecdcb9] border border-stone-850 px-4 py-3 rounded-xs shadow-md overflow-hidden flex flex-col justify-center items-center pointer-events-none opacity-0 ${
             isActive ? "inbox-letter" : ""
           }`}
           style={{ transform: "translate(-50%, -40px)" }}
@@ -1983,7 +1983,7 @@ function RavenInboxMock() {
         {/* Split Red Wax Seals */}
         {/* Left half */}
         <div 
-          className={`absolute left-1/2 top-[35px] -translate-x-[100%] -translate-y-1/2 z-30 w-5 h-10 bg-red-800 border border-red-950 rounded-l-full flex items-center justify-end pr-0.5 shadow-md ${
+          className={`absolute left-1/2 top-8.75 -translate-x-full -translate-y-1/2 z-30 w-5 h-10 bg-red-800 border border-red-950 rounded-l-full flex items-center justify-end pr-0.5 shadow-md ${
             isActive ? "inbox-seal-left" : ""
           }`}
         >
@@ -1991,7 +1991,7 @@ function RavenInboxMock() {
         </div>
         {/* Right half */}
         <div 
-          className={`absolute left-1/2 top-[35px] z-30 w-5 h-10 bg-red-800 border border-red-950 rounded-r-full flex items-center justify-start pl-0.5 shadow-md ${
+          className={`absolute left-1/2 top-8.75 z-30 w-5 h-10 bg-red-800 border border-red-950 rounded-r-full flex items-center justify-start pl-0.5 shadow-md ${
             isActive ? "inbox-seal-right" : ""
           }`}
         >
