@@ -25,6 +25,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { InteractiveBannerWeaver } from "@/components/InteractiveBannerWeaver";
+import { DragonfireSummaryBanners } from "@/components/DragonfireSummaryBanners";
+import { AmbientSoundToggle } from "@/components/AmbientSoundToggle";
+import { ChapterNavigationSidebar } from "@/components/ChapterNavigationSidebar";
+import { GoldStarfieldBackground } from "@/components/GoldStarfieldBackground";
+import { StaggerText } from "@/components/StaggerText";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -347,8 +353,8 @@ function Index() {
       <div className="min-h-screen bg-background text-foreground">
         {!introDone && <ColdOpen onDone={finishIntro} />}
 
-        {/* Global scroll progress weirwood branch navigator */}
-        <ThreeEyedRavenProgress />
+        {/* Global Gold Ember / Starfield Background */}
+        <GoldStarfieldBackground />
 
         {/* Global scroll-linked ember / frost motes */}
         <div className="motes-global" ref={motesRef} aria-hidden="true">
@@ -557,11 +563,14 @@ function Index() {
           </div>
         </section>
 
+        {/* DOMAIN SUMMARY BANNERS */}
+        <DragonfireSummaryBanners />
+
         {/* SCROLL OF PROPHECIES */}
         <ScrollOfProphecies />
 
         {/* FORGE OF THE IRON THRONE */}
-        <ForgeOfThrone />
+        <InteractiveBannerWeaver />
 
         {/* PROJECTS */}
         <IronGateReveal>
@@ -725,6 +734,11 @@ function Index() {
 
           </div>
         </section>
+
+        {/* AMBIENT SOUND TOGGLE & CHAPTER NAVIGATION SIDEBAR */}
+        <AmbientSoundToggle />
+        <ChapterNavigationSidebar />
+
 
         <footer className="border-t border-border py-10 text-center">
           <p className="font-display text-[0.65rem] tracking-[0.5em] uppercase text-muted-foreground">
@@ -899,8 +913,8 @@ function ScrollReveal({ children, className = "" }: { children: React.ReactNode;
         }
       },
       {
-        threshold: 0.1,
-        rootMargin: "0px 0px -50px 0px"
+        threshold: 0.08,
+        rootMargin: "0px 0px -40px 0px"
       }
     );
 
@@ -918,14 +932,17 @@ function ScrollReveal({ children, className = "" }: { children: React.ReactNode;
   return (
     <div
       ref={ref}
-      className={`transition-all duration-1000 ease-out ${
-        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
+      className={`transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        isVisible
+          ? "opacity-100 translate-y-0 scale-100 filter-none"
+          : "opacity-0 translate-y-14 scale-[0.97] blur-[2px]"
       } ${className}`}
     >
       {children}
     </div>
   );
 }
+
 
 function IronGateReveal({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -1987,165 +2004,7 @@ function RavenInboxMock() {
 }
 
 function ForgeOfThrone() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [scrollProgress, setScrollProgress] = useState(0);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const el = containerRef.current;
-      if (!el) return;
-
-      const rect = el.getBoundingClientRect();
-      const sectionHeight = rect.height;
-      const viewportHeight = window.innerHeight;
-
-      const start = rect.top + window.scrollY;
-      const totalScroll = sectionHeight - viewportHeight;
-      const currentScroll = window.scrollY - start;
-      const progress = Math.min(Math.max(currentScroll / totalScroll, 0), 1);
-      setScrollProgress(progress);
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const p1 = Math.min(Math.max((scrollProgress - 0.05) / 0.15, 0), 1);
-  const p2 = Math.min(Math.max((scrollProgress - 0.20) / 0.15, 0), 1);
-  const p3 = Math.min(Math.max((scrollProgress - 0.35) / 0.15, 0), 1);
-  const p4 = Math.min(Math.max((scrollProgress - 0.50) / 0.15, 0), 1);
-  const p5 = Math.min(Math.max((scrollProgress - 0.65) / 0.15, 0), 1);
-  const isForged = scrollProgress >= 0.82;
-  const showFlash = scrollProgress >= 0.78 && scrollProgress <= 0.88;
-
-  return (
-    <section id="forge" ref={containerRef} className="relative h-[250vh] bg-background border-t border-b border-border/10">
-      <div className="sticky top-0 h-screen w-full flex flex-col items-center justify-center overflow-hidden">
-        {/* Ambient Dark Fire Chamber Glow */}
-        <div className="absolute inset-0 bg-radial-gradient(circle_at_center,transparent_30%,#020617_90%) pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,rgba(217,119,6,0.06),transparent_60%)] pointer-events-none" />
-
-        {/* Forge Platform Title */}
-        <div className="absolute top-16 text-center select-none">
-          <p className="font-display text-[0.6rem] tracking-[0.4em] uppercase text-bronze/60">
-            ✦ Chapter I.V ✦
-          </p>
-          <h3 className="font-display text-2xl tracking-[0.25em] uppercase text-parchment text-glow-fire mt-2">
-            The Forge of Banners
-          </h3>
-        </div>
-
-        {/* The Assembly Canvas */}
-        <div className="relative w-[320px] h-[360px] flex items-center justify-center overflow-visible">
-          {/* Individual Sword Components (moving into center) */}
-
-          {/* Left Wing Sword (Ice) */}
-          <div
-            className="absolute z-10 origin-center transition-all duration-75"
-            style={{
-              transform: `translate(${-120 + p1 * 120}px, ${50 - p1 * 50}px) rotate(${-45 + p1 * 15}deg)`,
-              opacity: p1,
-            }}
-          >
-            <SwordSVG color="var(--color-ice)" />
-          </div>
-
-          {/* Right Wing Sword (Fire) */}
-          <div
-            className="absolute z-10 origin-center transition-all duration-75"
-            style={{
-              transform: `translate(${120 - p2 * 120}px, ${50 - p2 * 50}px) rotate(${45 - p2 * 15}deg)`,
-              opacity: p2,
-            }}
-          >
-            <SwordSVG color="var(--color-fire)" />
-          </div>
-
-          {/* Top Down Central Blade */}
-          <div
-            className="absolute z-20 origin-center transition-all duration-75"
-            style={{
-              transform: `translateY(${-180 + p3 * 180}px) rotate(180deg)`,
-              opacity: p3,
-            }}
-          >
-            <SwordSVG color="var(--color-bronze)" />
-          </div>
-
-          {/* Horizontal Guard Sword Left */}
-          <div
-            className="absolute z-10 origin-center transition-all duration-75"
-            style={{
-              transform: `translate(${-150 + p4 * 110}px, ${80}px) rotate(${-90 + p4 * 45}deg)`,
-              opacity: p4,
-            }}
-          >
-            <SwordSVG color="var(--border)" />
-          </div>
-
-          {/* Horizontal Guard Sword Right */}
-          <div
-            className="absolute z-10 origin-center transition-all duration-75"
-            style={{
-              transform: `translate(${150 - p4 * 110}px, ${80}px) rotate(${90 - p4 * 45}deg)`,
-              opacity: p4,
-            }}
-          >
-            <SwordSVG color="var(--border)" />
-          </div>
-
-          {/* Master King's Sword (Decending Straight down) */}
-          <div
-            className="absolute z-30 origin-center transition-all duration-75"
-            style={{
-              transform: `translateY(${-220 + p5 * 240}px)`,
-              opacity: p5,
-            }}
-          >
-            <SwordSVG color="var(--color-bronze)" glow="var(--color-fire)" />
-          </div>
-
-          {/* Forged Throne Reveal Overlay */}
-          {isForged && (
-            <div className="absolute inset-0 z-40 flex flex-col items-center justify-center animate-fade-in">
-              <div className="relative w-[280px] h-[280px] rounded-full overflow-hidden border border-bronze/50 shadow-[0_0_30px_rgba(217,119,6,0.35)] bg-stone-950/80">
-                <img
-                  src={ironThroneForge}
-                  alt="Forged Iron Throne"
-                  width={512}
-                  height={512}
-                  className="w-full h-full object-cover animate-pulse-slow scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 pointer-events-none" />
-              </div>
-              <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <span className="sparkle-particle sparkle-fire left-1/4 animate-drift" style={{ animationDelay: '0.1s', animationDuration: '1.5s' }} />
-                <span className="sparkle-particle sparkle-fire left-1/2 animate-drift" style={{ animationDelay: '0.4s', animationDuration: '2.1s' }} />
-                <span className="sparkle-particle sparkle-fire left-3/4 animate-drift" style={{ animationDelay: '0.2s', animationDuration: '1.8s' }} />
-              </div>
-            </div>
-          )}
-
-          {/* Heat distortion / forge flash trigger */}
-          <div
-            className={`absolute inset-[-40px] z-50 bg-radial-gradient(circle_at_center,var(--color-fire)_0%,transparent_75%) pointer-events-none mix-blend-screen transition-all duration-200 ${
-              showFlash ? "opacity-95 scale-110" : "opacity-0 scale-95"
-            }`}
-          />
-        </div>
-
-        {/* Forge status subtext */}
-        <div className="absolute bottom-16 text-center max-w-sm px-6 select-none">
-          <p className={`font-body italic text-sm text-muted-foreground transition-all duration-300 ${isForged ? "opacity-100 scale-100" : "opacity-40 scale-95"}`}>
-            {isForged
-              ? '"A thousand clean commits forged in the fires of resolve. The Throne of Craftsmanship stands complete."'
-              : '"Fusing syntax and framework into a blade of power..."'}
-          </p>
-        </div>
-      </div>
-    </section>
-  );
+  return <InteractiveBannerWeaver />;
 }
 
 function SwordSVG({ color, glow }: { color: string; glow?: string }) {
